@@ -18,6 +18,7 @@ def make_soup(url):
 
 
 def get_streamable_direct(url):
+    streamable_settings = streamable_settings()
     video_id = url.replace("https://streamable.com/", "")
     api = StreamableApi(streamable_settings.email, streamable_settings.password)
     try:
@@ -114,6 +115,7 @@ def process_submission(post):
     - extracts direct url
     - sends to telegram channel
     """
+    telegram_settings = telegram_settings()
     bot = telegram.Bot(token=telegram_settings.bot_token)
     updater = Updater(telegram_settings.bot_token)
     if is_video(post):
@@ -142,6 +144,7 @@ def process_submission(post):
 
 
 def main():
+    reddit_settings = reddit_settings()
     try:
         reddit = praw.Reddit(
             client_id=reddit_settings.client_id,
