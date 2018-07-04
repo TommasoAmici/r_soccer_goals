@@ -1,194 +1,161 @@
 from telegram.ext import Updater
 import telegram
 import praw
-import sched, time
-import logging
 from requests import get
 import json
 from pystreamable import StreamableApi
 from bs4 import BeautifulSoup
-
-
-def get_streamable_direct(url):
-    u = url
-    video_id = url.replace("https://streamable.com/", "")
-    api = StreamableApi("", "")
-    try:
-        return "https:{}".format(api.get_info(video_id)["files"]["mp4"]["url"])
-
-    except:
-        return u
-
-
-def get_streamja_direct(url):
-    video_id = url.replace("https://streamja.com/", "")
-    return "https://cdnja.b-cdn.net/mp4/{}/{}.mp4".format(
-        video_id[:2].lower(), video_id
-    )
-
-
-def get_clippuser_direct(url):
-    video_id = url.replace("https://www.clippituser.tv/c/", "")
-    return "https://clips.clippit.tv/{}/720.mp4".format(video_id)
+import uuid
+from settings import telegram_settings, reddit_settings, streamable_settings
 
 
 def make_soup(url):
     page = get(url)
     if page.status_code != 200:
         return None
-    return BeautifulSoup(page.text, "html.parser")
+    else:
+        return BeautifulSoup(page.text, "html.parser")
+
+
+def get_streamable_direct(url):
+    video_id = url.replace("https://streamable.com/", "")
+    api = StreamableApi(streamable_settings.email, streamable_settings.password)
+    try:
+        u = "https:{}".format(api.get_info(video_id)["files"]["mp4"]["url"])
+    except:
+        u = url
+    return u
+
+
+def get_streamja_direct(url):
+    soup = make_soup(url)
+    return soup.source.get("src")
+
+
+def get_clippuser_direct(url):
+    soup = make_soup(url)
+    return soup.find("div", attrs={"id": "player-container"}).get("data-hd-file")
 
 
 def get_flixtc_direct(url):
     soup = make_soup(url)
-    return soup.find('meta', attrs={'property': 'og:video:secure_url'})['content']
+    return soup.find("meta", attrs={"property": "og:video:secure_url"})["content"]
+
+
+def get_streamgoals_direct(url):
+    return url.replace("video", "cache") + ".mp4"
 
 
 def is_goal(post):
-    teams = [
+    teams = (
         "Milan",
-        "Inter",
+        "Inter ",
+        "Inter-",
+        "Inter)",
+        "Inter]",
+        "Inter.",
+        "Inter,",
+        "Internazionale",
         "Napoli",
         "Juve",
-        "Roma",
+        "Roma,",
+        "Roma)",
+        "Roma]",
+        "Roma.",
+        "Roma-",
+        "Roma ",
         "Lazio",
         "Spal",
         "Udinese",
         "Sampdoria",
         "Sassuolo",
-        "Benevento",
+        "Empoli",
         "Cagliari",
-        "Crotone",
+        "Parma",
         "Verona",
-        "Hellas",
+        "Frosinone",
         "Atalanta",
         "Chievo",
         "Torino",
         "Fiorentina",
         "Bologna",
-    ]
-    to_drop = ["internacional", "match", "Romario"]
-    if any(drop in post.title.lower() for drop in to_drop):
+    )
+    to_drop = ("Internacional", "Romario", "Romania")
+    if any(drop in post.title for drop in to_drop):
         return False
-
     elif any(team in post.title for team in teams):
         return True
-
     else:
         return False
 
 
-def aa_mirror(post):
-    mirrors = []
-    for c in post.comments:
-        if (
-            "mirror" in c.body.lower()
-            or "replay" in c.body.lower()
-            and len(c.body) > 30
-        ) and "aa" in c.body.lower():
-            mirrors.append(c)
-        else:
-            continue
-
-    return mirrors
-
-
-def check_soccer_new(reddit):
-    to_channel = []
-    streams = [
-        "streamable",
-        "flixtc",
-        "mixtape",
-        "v.redd",
-        "clippituser",
+def is_video(post):
+    streams = (
         "streamja",
+        "streamable",
+        "clippituser",
+        "mixtape",
+        "flixtc",
+        "streamgoals",
+        "v.redd",
         "a.pomfe.co",
-    ]
-    posts = [
-        p
-        for p in reddit.subreddit("soccer").new(limit=10)
-        if any(s in p.url for s in streams)
-    ]
-    for post in posts:
+        "kyouko.se",
+    )
+    if any(s in post.url for s in streams):
         if is_goal(post):
-            to_channel.append(post)
-            try:
-                to_channel.append(aa_mirror(post))
-            except:
-                pass
-            post.hide()
-            break
+            return True
+    return False
 
+
+def process_submission(post):
+    """
+    For each post 
+    - determines if it's a goal
+    - extracts direct url
+    - sends to telegram channel
+    """
+    bot = telegram.Bot(token=telegram_settings.bot_token)
+    updater = Updater(telegram_settings.bot_token)
+    if is_video(post):
+        if "streamable" in post.url:
+            url = get_streamable_direct(post.url)
+        elif "streamja" in post.url:
+            url = get_streamja_direct(post.url)
+        elif "clippituser" in post.url:
+            url = get_clippuser_direct(post.url)
+        elif "flixtc" in post.url:
+            url = get_flixtc_direct(post.url)
+        elif "streamgoals" in post.url:
+            url = get_streamgoals_direct(post.url)
         else:
-            continue
+            url = post.url
+        try:
+            bot.send_video(
+                chat_id=telegram_settings.chat_id,
+                video=url,
+                caption=post.title,
+                disable_notification=True,
+                file_id=uuid.uuid4(),
+            )
+        except:
+            return
 
-    return to_channel
 
-
-def check_goals_sched():
-    bot_token = ""
-    bot = telegram.Bot(token=bot_token)
-    updater = Updater(bot_token)
+def main():
     try:
         reddit = praw.Reddit(
-            client_id="",
-            client_secret="",
-            user_agent="",
-            username="",
-            password="",
+            client_id=reddit_settings.client_id,
+            client_secret=reddit_settings.client_secret,
+            user_agent=reddit_settings.user_agent,
+            username=reddit_settings.username,
+            password=reddit_settings.password,
         )
     except:
-        s.enter(5, 1, check_goals_sched)
-    try:
-        to_channel = check_soccer_new(reddit)
-    except:
-        s.enter(5, 1, check_goals_sched)
-    for post in to_channel:
-        if isinstance(post, praw.models.reddit.submission.Submission):
-            if "streamable" in post.url:
-                url = get_streamable_direct(post.url)
-            elif "streamja" in post.url:
-                url = get_streamja_direct(post.url)
-            elif "clippituser" in post.url:
-                url = get_clippuser_direct(post.url)
-            elif "flixtc" in post.url:
-                try:
-                    url = get_flixtc_direct(post.url)
-                except:
-                    pass
-            else:
-                url = post.url
-            try:
-                bot.send_document(
-                    chat_id="@golledisoccer",
-                    document=url,
-                    caption=post.title,
-                    disable_notification=True,
-                )
-            except:
-                bot.send_message(
-                    chat_id="@golledisoccer",
-                    text="{}\n{}".format(post.title, post.url),
-                    parse_mode="markdown",
-                    disable_notification=True,
-                )
-        elif isinstance(post, list):
-            for comment in post:
-                bot.send_message(
-                    chat_id="@golledisoccer",
-                    text="**AA/Mirror**\n{}".format(comment.body),
-                    parse_mode="markdown",
-                    disable_notification=True,
-                )
-    s.enter(5, 1, check_goals_sched)
+        main()
+    subreddit = reddit.subreddit(reddit_settings.subreddit)
+    for submission in subreddit.stream.submissions():
+        process_submission(submission)
 
 
 if __name__ == "__main__":
-    logging.info("Starting /r/soccer_golle_bot")
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    s = sched.scheduler(time.time, time.sleep)
-    s.enter(5, 1, check_goals_sched)
-    s.run()
+    main()
