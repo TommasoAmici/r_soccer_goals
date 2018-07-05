@@ -6,7 +6,7 @@ import json
 from pystreamable import StreamableApi
 from bs4 import BeautifulSoup
 import uuid
-import settings
+from settings import telegram_settings, streamable_settings, reddit_settings
 
 
 def make_soup(url):
@@ -18,9 +18,8 @@ def make_soup(url):
 
 
 def get_streamable_direct(url):
-    streamable_settings = settings.streamable_settings()
     video_id = url.replace("https://streamable.com/", "")
-    api = StreamableApi(streamable_settings.email, streamable_settings.password)
+    api = StreamableApi(streamable_settings["email"], streamable_settings["password"])
     try:
         u = "https:{}".format(api.get_info(video_id)["files"]["mp4"]["url"])
     except:
@@ -115,9 +114,8 @@ def process_submission(post):
     - extracts direct url
     - sends to telegram channel
     """
-    telegram_settings = settings.telegram_settings()
-    bot = telegram.Bot(token=telegram_settings.bot_token)
-    updater = Updater(telegram_settings.bot_token)
+    bot = telegram.Bot(token=telegram_settings["bot_token"])
+    updater = Updater(telegram_settings["bot_token"])
     if is_video(post):
         if "streamable" in post.url:
             url = get_streamable_direct(post.url)
@@ -133,7 +131,7 @@ def process_submission(post):
             url = post.url
         try:
             bot.send_video(
-                chat_id=telegram_settings.chat_id,
+                chat_id=telegram_settings["chat_id"],
                 video=url,
                 caption=post.title,
                 disable_notification=True,
@@ -144,18 +142,17 @@ def process_submission(post):
 
 
 def main():
-    reddit_settings = settings.reddit_settings()
     try:
         reddit = praw.Reddit(
-            client_id=reddit_settings.client_id,
-            client_secret=reddit_settings.client_secret,
-            user_agent=reddit_settings.user_agent,
-            username=reddit_settings.username,
-            password=reddit_settings.password,
+            client_id=reddit_settings["client_id"],
+            client_secret=reddit_settings["client_secret"],
+            user_agent=reddit_settings["user_agent"],
+            username=reddit_settings["username"],
+            password=reddit_settings["password"],
         )
     except:
         main()
-    subreddit = reddit.subreddit(reddit_settings.subreddit)
+    subreddit = reddit.subreddit(reddit_settings["subreddit"])
     for submission in subreddit.stream.submissions():
         process_submission(submission)
 

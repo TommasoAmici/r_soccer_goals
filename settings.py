@@ -3,23 +3,15 @@ Stores all secret keys for services and application
 """
 
 
-class reddit_settings:
-    def __init__(self):
-        self.client_id = ""
-        self.client_secret = ""
-        self.user_agent = ""
-        self.username = ""
-        self.password = ""
-        self.subreddit = ""
+reddit_settings = {
+    client_id: "",
+    client_secret: "",
+    user_agent: "",
+    username: "",
+    password: "",
+    subreddit: "",
+}
 
+telegram_settings = {chat_id: "", bot_token: ""}
 
-class telegram_settings:
-    def __init__(self):
-        self.chat_id = ""
-        self.bot_token = ""
-
-
-class streamable_settings:
-    def __init__(self):
-        self.email = ""
-        self.password = ""
+streamable_settings = {email: "", password: ""}
