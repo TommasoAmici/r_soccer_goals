@@ -1,3 +1,2 @@
 python_telegram_bot==10.0.1
 praw==5.4.0
-pystreamable==1.0.1

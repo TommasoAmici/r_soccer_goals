@@ -13,5 +13,3 @@ reddit_settings = {
 }
 
 telegram_settings = {"chat_id": "", "bot_token": ""}
-
-streamable_settings = {"email": "", "password": ""}
