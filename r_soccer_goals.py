@@ -9,7 +9,12 @@ from settings import telegram_settings, reddit_settings
 
 def get_url(post):
     with youtube_dl.YoutubeDL({}) as ydl:
-        video = ydl.extract_info(post.url, download=False)
+        result = ydl.extract_info(post.url, download=False)
+    if "entries" in result:
+        # Can be a playlist or a list of videos
+        video = result["entries"][0]
+    else:
+        video = result
     return video["url"]
 
 
