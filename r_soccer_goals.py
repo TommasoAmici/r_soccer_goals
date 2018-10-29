@@ -9,7 +9,11 @@ from settings import telegram_settings, reddit_settings
 
 def get_url(post):
     with youtube_dl.YoutubeDL({}) as ydl:
-        result = ydl.extract_info(post.url, download=False)
+        # mostly to handle tweets
+        try:
+            result = ydl.extract_info(post.url, download=False)
+        except:
+            return None
     if "entries" in result:
         # Can be a playlist or a list of videos
         video = result["entries"][0]
@@ -73,11 +77,25 @@ def is_video(post):
         "a.pomfe.co",
         "kyouko.se",
         "streamvi",
+        "twitter",
     )
     if any(s in post.url for s in streams):
         if is_goal(post):
             return True
     return False
+
+
+def send_video(post, url):
+    try:
+        bot.send_video(
+            chat_id=telegram_settings["chat_id"],
+            video=url,
+            caption=post.title,
+            disable_notification=True,
+            file_id=uuid.uuid4(),
+        )
+    except:
+        return
 
 
 def process_submission(post):
@@ -91,16 +109,10 @@ def process_submission(post):
     updater = Updater(telegram_settings["bot_token"])
     if is_video(post):
         url = get_url(post)
-        try:
-            bot.send_video(
-                chat_id=telegram_settings["chat_id"],
-                video=url,
-                caption=post.title,
-                disable_notification=True,
-                file_id=uuid.uuid4(),
-            )
-        except:
+        if url is None:
             return
+        else:
+            send_video(post, url)
 
 
 def main():
