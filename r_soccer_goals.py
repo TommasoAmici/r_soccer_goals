@@ -85,7 +85,7 @@ def is_video(post):
     return False
 
 
-def send_video(post, url):
+def send_video(bot, post, url):
     try:
         bot.send_video(
             chat_id=telegram_settings["chat_id"],
@@ -106,13 +106,12 @@ def process_submission(post):
     - sends to telegram channel
     """
     bot = telegram.Bot(token=telegram_settings["bot_token"])
-    updater = Updater(telegram_settings["bot_token"])
     if is_video(post):
         url = get_url(post)
         if url is None:
             return
         else:
-            send_video(post, url)
+            send_video(bot, post, url)
 
 
 def main():
