@@ -128,6 +128,7 @@ def main():
     subreddit = reddit.subreddit(reddit_settings["subreddit"])
     for submission in subreddit.stream.submissions():
         process_submission(submission)
+        submission.hide()
 
 
 if __name__ == "__main__":
