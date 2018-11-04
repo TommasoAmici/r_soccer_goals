@@ -5,6 +5,7 @@ from requests import get
 import uuid
 import youtube_dl
 from settings import telegram_settings, reddit_settings
+from teams import teams, to_drop
 
 
 def get_url(post):
@@ -23,40 +24,6 @@ def get_url(post):
 
 
 def is_goal(post):
-    teams = (
-        "Milan",
-        "Inter ",
-        "Inter-",
-        "Inter)",
-        "Inter]",
-        "Inter.",
-        "Inter,",
-        "Internazionale",
-        "Napoli",
-        "Juve",
-        "Roma,",
-        "Roma)",
-        "Roma]",
-        "Roma.",
-        "Roma-",
-        "Roma ",
-        "Lazio",
-        "Spal",
-        "Udinese",
-        "Sampdoria",
-        "Sassuolo",
-        "Empoli",
-        "Cagliari",
-        "Parma",
-        "Frosinone",
-        "Atalanta",
-        "Chievo",
-        "Genoa",
-        "Torino",
-        "Fiorentina",
-        "Bologna",
-    )
-    to_drop = ("Internacional", "Romario", "Romania")
     if any(drop in post.title for drop in to_drop):
         return False
     elif any(team in post.title for team in teams):
