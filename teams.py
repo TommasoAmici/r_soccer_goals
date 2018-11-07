@@ -1,11 +1,11 @@
 teams = (
     "Milan",
-    "Inter ",
     "Inter-",
     "Inter)",
     "Inter]",
     "Inter.",
     "Inter,",
+    "Inter",
     "Internazionale",
     "Napoli",
     "Juve",
@@ -14,7 +14,7 @@ teams = (
     "Roma]",
     "Roma.",
     "Roma-",
-    "Roma ",
+    "Roma",
     "Lazio",
     "Spal",
     "Udinese",
@@ -31,4 +31,4 @@ teams = (
     "Fiorentina",
     "Bologna",
 )
-to_drop = ("Internacional", "Romario", "Romania")
+to_drop = ("Internacional", "International", "Romario", "Romania")
