@@ -9,7 +9,7 @@ from teams import teams, to_drop
 
 
 def get_url(post):
-    with youtube_dl.YoutubeDL({}) as ydl:
+    with youtube_dl.YoutubeDL({"quiet": True}) as ydl:
         # mostly to handle tweets
         try:
             result = ydl.extract_info(post.url, download=False)
