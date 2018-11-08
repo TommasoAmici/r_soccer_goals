@@ -25,7 +25,8 @@ def get_url(post):
 
 def is_goal(post):
     # add space to detect word boundary (\b) in regex
-    return any(team.search(post.title + " ") for team in teams_regex)
+    title = post.title + " "
+    return any(team.search(title) for team in teams_regex)
 
 
 def is_video(post):
