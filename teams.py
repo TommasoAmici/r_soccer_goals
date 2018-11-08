@@ -1,19 +1,9 @@
 teams = (
     "Milan",
-    "Inter-",
-    "Inter)",
-    "Inter]",
-    "Inter.",
-    "Inter,",
     "Inter",
     "Internazionale",
     "Napoli",
     "Juve",
-    "Roma,",
-    "Roma)",
-    "Roma]",
-    "Roma.",
-    "Roma-",
     "Roma",
     "Lazio",
     "Spal",
@@ -31,4 +21,5 @@ teams = (
     "Fiorentina",
     "Bologna",
 )
-to_drop = ("Internacional", "International", "Romario", "Romania")
+
+teams_regex = [re.compile("({})\b".format(t)) for t in teams]

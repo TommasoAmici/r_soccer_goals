@@ -5,7 +5,8 @@ from requests import get
 import uuid
 import youtube_dl
 from settings import telegram_settings, reddit_settings
-from teams import teams, to_drop
+import re
+from teams import teams_regex
 
 
 def get_url(post):
@@ -24,12 +25,8 @@ def get_url(post):
 
 
 def is_goal(post):
-    if any(drop in post.title for drop in to_drop):
-        return False
-    elif any(team in post.title for team in teams):
-        return True
-    else:
-        return False
+    # add space to detect word boundary (\b) in regex
+    return any(team.search(post.title + " ") for team in teams_regex)
 
 
 def is_video(post):
