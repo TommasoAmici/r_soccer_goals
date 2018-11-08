@@ -25,4 +25,4 @@ teams = (
     "Bologna",
 )
 
-teams_regex = [re.compile("({})\b".format(t)) for t in teams]
+teams_regex = [re.compile(r"({})\b".format(t)) for t in teams]
