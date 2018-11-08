@@ -1,3 +1,6 @@
+import re
+
+
 teams = (
     "Milan",
     "Inter",

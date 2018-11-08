@@ -5,7 +5,6 @@ from requests import get
 import uuid
 import youtube_dl
 from settings import telegram_settings, reddit_settings
-import re
 from teams import teams_regex
 
 
