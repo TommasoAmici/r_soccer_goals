@@ -7,6 +7,7 @@ teams = (
     "Internazionale",
     "Napoli",
     "Juve",
+    "Juventus",
     "Roma",
     "Lazio",
     "Spal",
