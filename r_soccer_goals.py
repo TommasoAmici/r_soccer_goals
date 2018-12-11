@@ -4,6 +4,7 @@ import praw
 from requests import get
 import uuid
 import youtube_dl
+import re
 from settings import telegram_settings, reddit_settings
 from teams import teams_regex
 
@@ -26,7 +27,8 @@ def get_url(post):
 def is_goal(post):
     # add space to detect word boundary (\b) in regex
     title = post.title + " "
-    return any(team.search(title) for team in teams_regex)
+    youth = re.compile(r"(Youth|Primavera)\b")
+    return any(team.search(title) and not youth.search(title) for team in teams_regex)
 
 
 def is_video(post):
