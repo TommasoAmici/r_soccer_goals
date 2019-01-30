@@ -1,7 +1,6 @@
 from telegram.ext import Updater
 import telegram
 import praw
-from requests import get
 import uuid
 import youtube_dl
 import re
