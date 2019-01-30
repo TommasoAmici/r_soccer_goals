@@ -91,9 +91,8 @@ def main():
     except:
         main()
     subreddit = reddit.subreddit(reddit_settings["subreddit"])
-    for submission in subreddit.stream.submissions():
+    for submission in subreddit.stream.submissions(skip_existing=True):
         process_submission(submission)
-        submission.hide()
 
 
 if __name__ == "__main__":
