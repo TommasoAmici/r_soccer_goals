@@ -53,6 +53,7 @@ def is_video(post):
         "kyouko.se",
         "streamvi",
         "twitter",
+        "sporttube",
     )
     if any(s in post.url for s in streams):
         if is_goal(post):
