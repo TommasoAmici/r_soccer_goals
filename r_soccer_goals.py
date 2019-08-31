@@ -37,9 +37,7 @@ def is_goal(post):
     # add space to detect word boundary (\b) in regex
     title = post.title + " "
     youth = re.compile(r"(Youth|Primavera|U\d+)\b")
-    return any_two(
-        team.search(title) and not youth.search(title) for team in teams_regex
-    )
+    return any(team.search(title) and not youth.search(title) for team in teams_regex)
 
 
 def is_video(post):
