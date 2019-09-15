@@ -9,7 +9,7 @@ from teams import teams_regex
 
 
 def get_url(post):
-    with youtube_dl.YoutubeDL({"quiet": True}) as ydl:
+    with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
         try:
             result = ydl.extract_info(post.url, download=False)
