@@ -1,11 +1,12 @@
-from telegram.ext import Updater
-import telegram
-import praw
-import uuid
-import youtube_dl
+import os
 import re
-from settings import telegram_settings, reddit_settings
+import uuid
+
+import praw
+import telegram
+import youtube_dl
 from teams import teams_regex
+from telegram.ext import Updater
 
 
 def get_url(post):
@@ -21,16 +22,6 @@ def get_url(post):
     else:
         video = result
     return video["url"]
-
-
-def any_two(iterable):
-    count = 0
-    for element in iterable:
-        if element:
-            count += 1
-            if count > 1:
-                return True
-    return False
 
 
 def is_goal(post):
@@ -64,7 +55,7 @@ def is_video(post):
 def send_video(bot, post, url):
     try:
         bot.send_video(
-            chat_id=telegram_settings["chat_id"],
+            chat_id=os.environ["TELEGRAM_CHAT_ID"],
             video=url,
             caption=post.title,
             disable_notification=True,
@@ -81,7 +72,7 @@ def process_submission(post):
     - extracts direct url
     - sends to telegram channel
     """
-    bot = telegram.Bot(token=telegram_settings["bot_token"])
+    bot = telegram.Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
     if is_video(post):
         url = get_url(post)
         if url is None:
@@ -93,15 +84,15 @@ def process_submission(post):
 def main():
     try:
         reddit = praw.Reddit(
-            client_id=reddit_settings["client_id"],
-            client_secret=reddit_settings["client_secret"],
-            user_agent=reddit_settings["user_agent"],
-            username=reddit_settings["username"],
-            password=reddit_settings["password"],
+            client_id=os.environ["REDDIT_CLIENT_ID"],
+            client_secret=os.environ["REDDIT_CLIENT_SECRET"],
+            user_agent=os.environ["REDDIT_USER_AGENT"],
+            username=os.environ["REDDIT_USERNAME"],
+            password=os.environ["REDDIT_PASSWORD"],
         )
     except:
         main()
-    subreddit = reddit.subreddit(reddit_settings["subreddit"])
+    subreddit = reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
     for submission in subreddit.stream.submissions(skip_existing=True):
         process_submission(submission)
 
