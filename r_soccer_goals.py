@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import uuid
@@ -5,8 +6,9 @@ import uuid
 import praw
 import telegram
 import youtube_dl
-from teams import teams_regex
 from telegram.ext import Updater
+
+from teams import teams_regex
 
 
 def get_url(post):
@@ -82,6 +84,7 @@ def process_submission(post):
 
 
 def main():
+    logging.info("Started gol-serie-a bot")
     try:
         reddit = praw.Reddit(
             client_id=os.environ["REDDIT_CLIENT_ID"],
