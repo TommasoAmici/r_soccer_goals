@@ -1,0 +1,38 @@
+name: CI/CD
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    deploy:
+        name: Deploy
+        runs-on: self-hosted
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Build image
+              run: podman build --pull --rm -f "Dockerfile" -t rsoccergoals:latest "."
+
+            - name: Run
+              env:
+                  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+                  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+                  REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+                  REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+                  REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+                  REDDIT_USERNAME: ${{ secrets.REDDIT_USERNAME }}
+                  REDDIT_PASSWORD: ${{ secrets.REDDIT_PASSWORD }}
+                  REDDIT_SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
+              run: |
+                  podman run -d \
+                  -e TELEGRAM_CHAT_ID -e TELEGRAM_BOT_TOKEN \
+                  -e REDDIT_CLIENT_ID -e REDDIT_CLIENT_SECRET \
+                  -e REDDIT_USER_AGENT -e REDDIT_USERNAME \
+                  -e REDDIT_PASSWORD -e REDDIT_SUBREDDIT \
+                  rsoccergoals:latest
