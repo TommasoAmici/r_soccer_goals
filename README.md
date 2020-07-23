@@ -1,3 +1,6 @@
+![Tests](https://github.com/TommasoAmici/r_soccer_goals/workflows/Test/badge.svg)
+![CI/CD](https://github.com/TommasoAmici/r_soccer_goals/workflows/CI/CD/badge.svg)
+
 # Telegram-bot-r-soccer-goals
 
 A Telegram bot that reposts Serie A goals (or any type of content) from /r/soccer/new (or other subreddits) to a [channel](https://t.me/golledisoccer).
