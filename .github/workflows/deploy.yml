@@ -4,9 +4,6 @@ on:
     push:
         branches:
             - master
-    pull_request:
-        branches:
-            - master
 
 jobs:
     deploy:
@@ -16,20 +13,11 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v2
 
-            - name: Build image
-              run: podman build --pull --rm -f "Dockerfile" -t rsoccergoals:latest "."
-
-            - name: Run
-              env:
-                  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-                  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-                  REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-                  REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-                  REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-                  REDDIT_SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
+            - name: Create venv
               run: |
-                  podman run -d \
-                  -e TELEGRAM_CHAT_ID -e TELEGRAM_BOT_TOKEN \
-                  -e REDDIT_CLIENT_ID -e REDDIT_CLIENT_SECRET \
-                  -e REDDIT_USER_AGENT -e REDDIT_SUBREDDIT \
-                  rsoccergoals:latest
+                  python3 -m venv venv
+                  source venv/bin/activate
+                  python3 -m pip install -r requirements.txt
+
+            - name: Restart service
+              run: sudo systemctl restart rsoccergoals.service
