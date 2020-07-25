@@ -75,7 +75,11 @@ def process_submission(post):
     - extracts direct url
     - sends to telegram channel
     """
-    bot = telegram.Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
+    try:
+        bot = telegram.Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
+    except Exception as e:
+        logging.error(e)
+        raise e
     if is_video(post):
         url = get_url(post)
         if url is None:
