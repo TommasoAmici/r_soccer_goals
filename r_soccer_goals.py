@@ -37,6 +37,7 @@ def is_goal(post):
 def is_video(post):
     streams = (
         "streamja",
+        "streamye",
         "streamable",
         "clippituser",
         "mixtape",
