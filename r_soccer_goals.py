@@ -98,9 +98,8 @@ def main():
             client_id=os.environ["REDDIT_CLIENT_ID"],
             client_secret=os.environ["REDDIT_CLIENT_SECRET"],
             user_agent=os.environ["REDDIT_USER_AGENT"],
-            username=os.environ["REDDIT_USERNAME"],
-            password=os.environ["REDDIT_PASSWORD"],
         )
+        reddit.read_only = True
         subreddit = reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
         for submission in subreddit.stream.submissions(skip_existing=True):
             process_submission(submission)
