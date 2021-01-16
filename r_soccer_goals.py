@@ -51,6 +51,8 @@ def is_video(post):
         "streamvi",
         "twitter",
         "sporttube",
+        "stream",
+        "streamwo"
     )
     if any(s in post.url for s in streams):
         if is_goal(post):
