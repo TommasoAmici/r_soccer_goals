@@ -69,7 +69,8 @@ def send_video(bot, post, url):
             disable_notification=True,
             file_id=uuid.uuid4(),
         )
-    except:
+    except Exception as e:
+        logging.error(e)
         return
 
 
