@@ -95,7 +95,7 @@ def process_submission(post):
 
 
 def main():
-    logging.info("Started gol-serie-a bot")
+    logging.info("Started r_soccer_goals bot")
     try:
         reddit = praw.Reddit(
             client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -105,6 +105,7 @@ def main():
         reddit.read_only = True
         subreddit = reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
         for submission in subreddit.stream.submissions(skip_existing=True):
+            logging.info(f"Processing post {submission.id}")
             process_submission(submission)
     except Exception as e:
         logging.error(e)

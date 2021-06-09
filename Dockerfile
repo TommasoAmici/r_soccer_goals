@@ -11,5 +11,5 @@ FROM python:3-alpine
 COPY --from=build-python /root/.local /root/.local
 # Make sure scripts in .local are usable:
 ENV PATH=/root/.local/bin:$PATH
-COPY r_soccer_goals.py teams.py /
-CMD ["python", "r_soccer_goals.py"]
+COPY main.py teams.py /
+CMD ["python", "main.py"]
