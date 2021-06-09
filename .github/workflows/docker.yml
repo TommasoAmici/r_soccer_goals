@@ -19,13 +19,10 @@ jobs:
           registry: docker.pkg.github.com
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Repo name needs to be lowercase
-        run: |
-          echo IMAGE_REPOSITORY=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Build container image
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: |
-            docker.pkg.github.com/${{ IMAGE_REPOSITORY }}/octo-image:${{ github.sha }}
-            docker.pkg.github.com/${{ IMAGE_REPOSITORY }}/octo-image:${{ github.ref }}
+            docker.pkg.github.com/tommasoamici/r_soccer_goals/octo-image:${{ github.sha }}
+            docker.pkg.github.com/tommasoamici/r_soccer_goals/octo-image:${{ github.ref }}
