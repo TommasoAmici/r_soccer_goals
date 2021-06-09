@@ -33,7 +33,9 @@ blacklist = re.compile(r"(Youth|Primavera|U\d+|Inter Miami)\b")
 def is_goal(post):
     # add space to detect word boundary (\b) in regex
     title = post.title + " "
-    return any(team.search(title) and not blacklist.search(title) for team in teams_regex)
+    return any(
+        team.search(title) and not blacklist.search(title) for team in teams_regex
+    )
 
 
 def is_video(post):
@@ -52,7 +54,7 @@ def is_video(post):
         "twitter",
         "sporttube",
         "stream",
-        "streamwo"
+        "streamwo",
     )
     if any(s in post.url for s in streams):
         if is_goal(post):
@@ -76,7 +78,7 @@ def send_video(bot, post, url):
 
 def process_submission(post):
     """
-    For each post 
+    For each post
     - determines if it's a goal
     - extracts direct url
     - sends to telegram channel
