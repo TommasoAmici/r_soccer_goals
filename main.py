@@ -11,6 +11,11 @@ from telegram.ext import Updater
 
 from teams import teams_regex
 
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def get_url(post):
     with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
@@ -72,7 +77,7 @@ def send_video(bot, post, url):
             file_id=uuid.uuid4(),
         )
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         return
 
 
@@ -86,7 +91,7 @@ def process_submission(post):
     try:
         bot = telegram.Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         raise e
     if is_video(post):
         url = get_url(post)
@@ -97,7 +102,7 @@ def process_submission(post):
 
 
 def main():
-    logging.info("Started r_soccer_goals bot")
+    logger.info("Started r_soccer_goals bot")
     try:
         reddit = praw.Reddit(
             client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -109,10 +114,10 @@ def main():
         reddit.read_only = True
         subreddit = reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
         for submission in subreddit.stream.submissions(skip_existing=True):
-            logging.info(f"Processing post {submission.id}")
+            logger.info(f"Processing post {submission.id}")
             process_submission(submission)
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         time.sleep(3)
         main()
 
