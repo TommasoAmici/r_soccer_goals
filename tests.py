@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from r_soccer_goals import is_goal, is_video
+from .main import is_goal, is_video
 
 
 @dataclass
