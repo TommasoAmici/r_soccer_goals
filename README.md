@@ -10,7 +10,7 @@ A Telegram bot that reposts Serie A goals (or any type of content) from /r/socce
 
 - Pull the image
   ```zsh
-  docker pull docker.pkg.github.com/tommasoamici/r_soccer_goals/r_soccer_goals:latest
+  docker pull tommasoamici/r_soccer_goals:latest
   ```
 
 - Create a `.env` file with the required [environment variables](##Environment-variables).
