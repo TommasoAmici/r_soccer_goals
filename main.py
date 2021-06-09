@@ -3,6 +3,7 @@ import os
 import re
 import time
 import uuid
+from typing import Optional
 
 import praw
 import telegram
@@ -18,7 +19,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def get_url(submission: Submission):
+def get_url(submission: Submission) -> Optional[str]:
     with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
         try:
@@ -36,7 +37,7 @@ def get_url(submission: Submission):
 blacklist = re.compile(r"(Youth|Primavera|U\d+|Inter Miami)\b")
 
 
-def is_goal(submission: Submission):
+def is_goal(submission: Submission) -> bool:
     # add space to detect word boundary (\b) in regex
     title = submission.title + " "
     return any(
@@ -44,7 +45,7 @@ def is_goal(submission: Submission):
     )
 
 
-def is_video(submission: Submission):
+def is_video(submission: Submission) -> bool:
     streams = (
         "streamja",
         "streamye",
@@ -68,7 +69,7 @@ def is_video(submission: Submission):
     return False
 
 
-def send_video(bot: telegram.Bot, submission: Submission, url: str):
+def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
     try:
         bot.send_video(
             chat_id=os.environ["TELEGRAM_CHAT_ID"],
@@ -82,7 +83,7 @@ def send_video(bot: telegram.Bot, submission: Submission, url: str):
         return
 
 
-def process_submission(submission: Submission):
+def process_submission(submission: Submission) -> None:
     """
     For each submission
     - determines if it's a goal
@@ -102,7 +103,7 @@ def process_submission(submission: Submission):
             send_video(bot, submission, url)
 
 
-def main():
+def main() -> None:
     logger.info("Started r_soccer_goals bot")
     try:
         reddit = praw.Reddit(
