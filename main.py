@@ -7,7 +7,7 @@ import uuid
 import praw
 import telegram
 import youtube_dl
-from telegram.ext import Updater
+from praw.models import Submission
 
 from teams import teams_regex
 
@@ -17,11 +17,12 @@ logging.basicConfig(
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-def get_url(post):
+
+def get_url(submission: Submission):
     with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
         try:
-            result = ydl.extract_info(post.url, download=False)
+            result = ydl.extract_info(submission.url, download=False)
         except:
             return None
     if "entries" in result:
@@ -35,15 +36,15 @@ def get_url(post):
 blacklist = re.compile(r"(Youth|Primavera|U\d+|Inter Miami)\b")
 
 
-def is_goal(post):
+def is_goal(submission: Submission):
     # add space to detect word boundary (\b) in regex
-    title = post.title + " "
+    title = submission.title + " "
     return any(
         team.search(title) and not blacklist.search(title) for team in teams_regex
     )
 
 
-def is_video(post):
+def is_video(submission: Submission):
     streams = (
         "streamja",
         "streamye",
@@ -61,18 +62,18 @@ def is_video(post):
         "stream",
         "streamwo",
     )
-    if any(s in post.url for s in streams):
-        if is_goal(post):
+    if any(s in submission.url for s in streams):
+        if is_goal(submission):
             return True
     return False
 
 
-def send_video(bot, post, url):
+def send_video(bot: telegram.Bot, submission: Submission, url: str):
     try:
         bot.send_video(
             chat_id=os.environ["TELEGRAM_CHAT_ID"],
             video=url,
-            caption=post.title,
+            caption=submission.title,
             disable_notification=True,
             file_id=uuid.uuid4(),
         )
@@ -81,9 +82,9 @@ def send_video(bot, post, url):
         return
 
 
-def process_submission(post):
+def process_submission(submission: Submission):
     """
-    For each post
+    For each submission
     - determines if it's a goal
     - extracts direct url
     - sends to telegram channel
@@ -93,12 +94,12 @@ def process_submission(post):
     except Exception as e:
         logger.error(e)
         raise e
-    if is_video(post):
-        url = get_url(post)
+    if is_video(submission):
+        url = get_url(submission)
         if url is None:
             return
         else:
-            send_video(bot, post, url)
+            send_video(bot, submission, url)
 
 
 def main():
