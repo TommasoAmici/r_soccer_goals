@@ -2,7 +2,6 @@ import logging
 import os
 import re
 import time
-import uuid
 from typing import Optional
 
 import praw
@@ -76,7 +75,6 @@ def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
             video=url,
             caption=submission.title,
             disable_notification=True,
-            file_id=uuid.uuid4(),
         )
     except Exception as e:
         logger.error(e)
