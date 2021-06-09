@@ -1,9 +1,8 @@
-![Tests](https://github.com/TommasoAmici/r_soccer_goals/workflows/Test/badge.svg)
-![CI/CD](https://github.com/TommasoAmici/r_soccer_goals/workflows/CI/CD/badge.svg)
+[![CI/CD](https://github.com/TommasoAmici/r_soccer_goals/actions/workflows/docker.yml/badge.svg)](https://github.com/TommasoAmici/r_soccer_goals/actions/workflows/docker.yml)
 
-# Telegram-bot-r-soccer-goals
+# r_soccer_goals
 
-A Telegram bot that reposts Serie A goals (or any type of content) from /r/soccer/new (or other subreddits) to a [channel](https://t.me/golledisoccer).
+A Telegram bot that reposts Serie A goals (or any type of content) from /r/soccer/new (or other subreddits) to a channel.
 
 ## Usage
 
