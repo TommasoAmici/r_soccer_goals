@@ -23,7 +23,7 @@ jobs:
             pip install pytest-cov
             pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
   push_to_registry:
-    name: Push Docker image to GitHub Packages
+    name: Push Docker image to Docker Hub
     needs: test
     runs-on: ubuntu-latest
     permissions:
