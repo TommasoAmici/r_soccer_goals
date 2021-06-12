@@ -30,4 +30,4 @@ if teams is None:
     )
 else:
     teams = teams.split(",")
-teams_regex = [re.compile(r"({})\b".format(t)) for t in teams]
+teams_regex = re.compile(rf'({"|".join(teams)})\b')

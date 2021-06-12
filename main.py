@@ -37,10 +37,8 @@ blacklist = re.compile(r"(Youth|Primavera|U\d+|Inter Miami)\b")
 
 
 def is_goal(submission: Submission) -> bool:
-    # add space to detect word boundary (\b) in regex
-    title = submission.title + " "
-    return any(
-        team.search(title) and not blacklist.search(title) for team in teams_regex
+    return teams_regex.search(submission.title) and not blacklist.search(
+        submission.title
     )
 
 
