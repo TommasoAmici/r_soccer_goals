@@ -104,6 +104,9 @@ def process_submission(submission: Submission, retries=3) -> None:
                 return
             except Exception as e:
                 logger.error(e)
+                # don't send tweets as links
+                if "twitter" in submission.title:
+                    return
                 pass
         bot.send_message(
             chat_id=os.environ["TELEGRAM_CHAT_ID"],
