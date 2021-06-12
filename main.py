@@ -20,7 +20,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def get_url(submission: Submission) -> Optional[str]:
+def get_url(submission: Submission, retries: int) -> Optional[str]:
     result = {}
     with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
@@ -29,7 +29,7 @@ def get_url(submission: Submission) -> Optional[str]:
         except DownloadError:
             # When it fails downloading it may be the case that video
             # wasn't ready yet, let's try again in a minute (#5)
-            timer = threading.Timer(60.0, process_submission, [submission])
+            timer = threading.Timer(60.0, process_submission, [submission, retries - 1])
             timer.start()
             return None
         except Exception as e:
@@ -88,7 +88,7 @@ def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
         return
 
 
-def process_submission(submission: Submission) -> None:
+def process_submission(submission: Submission, retries=3) -> None:
     """
     For each submission
     - determines if it's a goal
@@ -101,7 +101,7 @@ def process_submission(submission: Submission) -> None:
         logger.error(e)
         raise e
     if is_video(submission):
-        url = get_url(submission)
+        url = get_url(submission, retries)
         if url is not None:
             send_video(bot, submission, url)
 
