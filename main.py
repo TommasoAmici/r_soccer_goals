@@ -76,22 +76,12 @@ def is_video(submission: Submission) -> bool:
 
 
 def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
-    try:
-        bot.send_video(
-            chat_id=os.environ["TELEGRAM_CHAT_ID"],
-            video=url,
-            caption=submission.title,
-            disable_notification=True,
-        )
-    except Exception as e:
-        logger.error(e)
-        bot.send_message(
-            chat_id=os.environ["TELEGRAM_CHAT_ID"],
-            text=f"[{submission.title}]({url})",
-            disable_notification=True,
-            parse_mode="MarkdownV2",
-        )
-        return
+    bot.send_video(
+        chat_id=os.environ["TELEGRAM_CHAT_ID"],
+        video=url,
+        caption=submission.title,
+        disable_notification=True,
+    )
 
 
 def process_submission(submission: Submission, retries=3) -> None:
@@ -109,7 +99,18 @@ def process_submission(submission: Submission, retries=3) -> None:
     if is_video(submission):
         url = get_url(submission, retries)
         if url is not None:
-            send_video(bot, submission, url)
+            try:
+                send_video(bot, submission, url)
+                return
+            except Exception as e:
+                logger.error(e)
+                pass
+        bot.send_message(
+            chat_id=os.environ["TELEGRAM_CHAT_ID"],
+            text=f"[{submission.title}]({submission.url})",
+            disable_notification=True,
+            parse_mode="MarkdownV2",
+        )
 
 
 def main() -> None:
