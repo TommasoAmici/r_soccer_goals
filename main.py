@@ -29,7 +29,8 @@ def get_url(submission: Submission) -> Optional[str]:
         except DownloadError:
             # When it fails downloading it may be the case that video
             # wasn't ready yet, let's try again in a minute (#5)
-            threading.Timer(60.0, process_submission, [submission])
+            timer = threading.Timer(60.0, process_submission, [submission])
+            timer.start()
         except Exception as e:
             logger.error(e)
             return None
