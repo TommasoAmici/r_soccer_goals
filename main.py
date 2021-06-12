@@ -85,6 +85,12 @@ def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
         )
     except Exception as e:
         logger.error(e)
+        bot.send_message(
+            chat_id=os.environ["TELEGRAM_CHAT_ID"],
+            text=f"[{submission.title}]({url})",
+            disable_notification=True,
+            parse_mode="MarkdownV2",
+        )
         return
 
 
