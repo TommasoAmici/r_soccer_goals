@@ -31,6 +31,7 @@ def get_url(submission: Submission) -> Optional[str]:
             # wasn't ready yet, let's try again in a minute (#5)
             timer = threading.Timer(60.0, process_submission, [submission])
             timer.start()
+            return None
         except Exception as e:
             logger.error(e)
             return None
