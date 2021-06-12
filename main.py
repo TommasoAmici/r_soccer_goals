@@ -61,8 +61,7 @@ def is_video(submission: Submission) -> bool:
         "streamwo",
     )
     if any(s in submission.url for s in streams):
-        if is_goal(submission):
-            return True
+        return is_goal(submission)
     return False
 
 
@@ -93,9 +92,7 @@ def process_submission(submission: Submission) -> None:
         raise e
     if is_video(submission):
         url = get_url(submission)
-        if url is None:
-            return
-        else:
+        if url is not None:
             send_video(bot, submission, url)
 
 
