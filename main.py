@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import threading
 import time
 from typing import Optional
 
@@ -8,6 +9,7 @@ import praw
 import telegram
 import youtube_dl
 from praw.models import Submission
+from youtube_dl.utils import DownloadError
 
 from teams import teams_regex
 
@@ -23,7 +25,12 @@ def get_url(submission: Submission) -> Optional[str]:
         # mostly to handle tweets
         try:
             result = ydl.extract_info(submission.url, download=False)
-        except:
+        except DownloadError:
+            # When it fails downloading it may be the case that video
+            # wasn't ready yet, let's try again in a minute (#5)
+            threading.Timer(60.0, process_submission, [submission])
+        except Exception as e:
+            logger.error(e)
             return None
     if "entries" in result:
         # Can be a playlist or a list of videos
