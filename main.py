@@ -21,6 +21,7 @@ logger.setLevel(logging.INFO)
 
 
 def get_url(submission: Submission) -> Optional[str]:
+    result = {}
     with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
         try:
