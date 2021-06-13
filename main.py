@@ -98,7 +98,7 @@ def process_submission(submission: Submission) -> None:
                 logger.error(e)
                 pass
         # don't send tweets as links
-        if "twitter" not in submission.title:
+        if "twitter" not in submission.url:
             bot.send_message(
                 chat_id=os.environ["TELEGRAM_CHAT_ID"],
                 text=f"{submission.title}\n\n{submission.url}",
