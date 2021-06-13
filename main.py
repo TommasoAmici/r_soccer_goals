@@ -29,8 +29,11 @@ def get_url(submission: Submission, retries: int) -> Optional[str]:
         except DownloadError:
             # When it fails downloading it may be the case that video
             # wasn't ready yet, let's try again in a minute (#5)
-            timer = threading.Timer(60.0, process_submission, [submission, retries - 1])
-            timer.start()
+            if "twitter" not in submission.title:
+                timer = threading.Timer(
+                    60.0, process_submission, [submission, retries - 1]
+                )
+                timer.start()
             return None
         except Exception as e:
             logger.error(e)
@@ -104,16 +107,15 @@ def process_submission(submission: Submission, retries=3) -> None:
                 return
             except Exception as e:
                 logger.error(e)
-                # don't send tweets as links
-                if "twitter" in submission.title:
-                    return
                 pass
-        bot.send_message(
-            chat_id=os.environ["TELEGRAM_CHAT_ID"],
-            text=f"[{submission.title}]({submission.url})",
-            disable_notification=True,
-            parse_mode="MarkdownV2",
-        )
+        # don't send tweets as links
+        if "twitter" not in submission.title:
+            bot.send_message(
+                chat_id=os.environ["TELEGRAM_CHAT_ID"],
+                text=f"[{submission.title}]({submission.url})",
+                disable_notification=True,
+                parse_mode="MarkdownV2",
+            )
 
 
 def main() -> None:
