@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import threading
 import time
 from typing import Optional
 
@@ -9,7 +8,6 @@ import praw
 import telegram
 import youtube_dl
 from praw.models import Submission
-from youtube_dl.utils import DownloadError
 
 from teams import teams_regex
 
@@ -20,21 +18,12 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def get_url(submission: Submission, retries: int) -> Optional[str]:
+def get_url(submission: Submission) -> Optional[str]:
     result = {}
     with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
         try:
             result = ydl.extract_info(submission.url, download=False)
-        except DownloadError:
-            # When it fails downloading it may be the case that video
-            # wasn't ready yet, let's try again in a minute (#5)
-            if "twitter" not in submission.title:
-                timer = threading.Timer(
-                    60.0, process_submission, [submission, retries - 1]
-                )
-                timer.start()
-            return None
         except Exception as e:
             logger.error(e)
             return None
@@ -87,7 +76,7 @@ def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
     )
 
 
-def process_submission(submission: Submission, retries=3) -> None:
+def process_submission(submission: Submission) -> None:
     """
     For each submission
     - determines if it's a goal
@@ -100,7 +89,7 @@ def process_submission(submission: Submission, retries=3) -> None:
         logger.error(e)
         raise e
     if is_video(submission):
-        url = get_url(submission, retries)
+        url = get_url(submission)
         if url is not None:
             try:
                 send_video(bot, submission, url)
