@@ -101,9 +101,8 @@ def process_submission(submission: Submission) -> None:
         if "twitter" not in submission.title:
             bot.send_message(
                 chat_id=os.environ["TELEGRAM_CHAT_ID"],
-                text=f"[{submission.title}]({submission.url})",
+                text=f"{submission.title}\n\n{submission.url}",
                 disable_notification=True,
-                parse_mode="MarkdownV2",
             )
 
 
