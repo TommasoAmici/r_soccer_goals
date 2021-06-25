@@ -35,7 +35,7 @@ def get_url(submission: Submission) -> Optional[str]:
     return video["url"]
 
 
-blacklist = re.compile(r"(Youth|Primavera|U\d+|Inter Miami|Inter Escaldes)\b")
+blacklist = re.compile(r"(Youth|Primavera|U\d+|Inter Miami|Inter Escaldes|New England)\b")
 
 
 def is_goal(submission: Submission) -> bool:
