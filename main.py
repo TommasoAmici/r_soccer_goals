@@ -6,7 +6,7 @@ from typing import Optional
 
 import praw
 import telegram
-import youtube_dl
+import yt_dlp
 from praw.models import Submission
 
 from teams import teams_regex
@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 
 def get_url(submission: Submission) -> Optional[str]:
     result = {}
-    with youtube_dl.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
+    with yt_dlp.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
         try:
             result = ydl.extract_info(submission.url, download=False)
