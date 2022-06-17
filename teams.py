@@ -18,15 +18,16 @@ if teams is None:
         "Sassuolo",
         "Hellas",
         "Verona",
-        "Cagliari",
         "Parma",
-        "Benevento",
         "Atalanta",
-        "Crotone",
-        "Genoa",
         "Torino",
         "Fiorentina",
         "Bologna",
+        "Cremonese",
+        "Empoli",
+        "Lecce",
+        "Monza",
+        "Salernitana",
     )
 else:
     teams = teams.split(",")
