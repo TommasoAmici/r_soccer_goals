@@ -46,21 +46,15 @@ def is_goal(submission: Submission) -> bool:
 
 def is_video(submission: Submission) -> bool:
     streams = (
-        "streamja",
-        "streamye",
-        "streamable",
+        "stream",
         "clippituser",
         "mixtape",
         "flixtc",
-        "streamgoals",
         "v.redd",
         "a.pomfe.co",
         "kyouko.se",
-        "streamvi",
         "twitter",
         "sporttube",
-        "stream",
-        "streamwo",
     )
     if any(s in submission.url for s in streams):
         return is_goal(submission)
