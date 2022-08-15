@@ -44,7 +44,7 @@ def is_goal(submission: Submission) -> bool:
 def is_video(submission: Submission) -> bool:
     streams = (
         "stream",
-        "clippituser",
+        "clip",
         "mixtape",
         "flixtc",
         "v.redd",
