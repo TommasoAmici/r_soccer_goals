@@ -92,6 +92,6 @@ jobs:
       - name: Create GitHub release
         run: |
           tagname="${{ needs.changelog.outputs.tag }}"
-          gh release create "$tagname" --notes-file ${{ needs.changelog.outputs.body }}
+          gh release create "$tagname" --notes ${{ needs.changelog.outputs.body }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
