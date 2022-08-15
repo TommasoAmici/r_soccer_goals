@@ -89,9 +89,11 @@ jobs:
       - name: Tag HEAD
         run: git tag ${{ needs.changelog.outputs.tag }}
 
-      - name: Create GitHub release
-        run: |
-          tagname="${{ needs.changelog.outputs.tag }}"
-          gh release create "$tagname" --notes ${{ needs.changelog.outputs.body }}
+      - name: Create Release
+        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          release_name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
