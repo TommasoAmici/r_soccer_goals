@@ -32,3 +32,18 @@ if teams is None:
 else:
     teams = teams.split(",")
 teams_regex = re.compile(rf'({"|".join(teams)})\b')
+
+
+blacklist = os.environ.get("BLACKLIST")
+if blacklist is None:
+    blacklist = (
+        "Youth",
+        "Primavera",
+        "U\d+",
+        "Inter Miami",
+        "Inter Escaldes",
+        "New England",
+    )
+else:
+    blacklist = blacklist.split(",")
+blacklist_regex = re.compile(rf'({"|".join(blacklist)})\b')

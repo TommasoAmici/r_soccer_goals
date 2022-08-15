@@ -9,7 +9,7 @@ import telegram
 import yt_dlp
 from praw.models import Submission
 
-from teams import teams_regex
+from teams import blacklist_regex, teams_regex
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -35,11 +35,8 @@ def get_url(submission: Submission) -> Optional[str]:
     return video["url"]
 
 
-blacklist = re.compile(r"(Youth|Primavera|U\d+|Inter Miami|Inter Escaldes|New England)\b")
-
-
 def is_goal(submission: Submission) -> bool:
-    return teams_regex.search(submission.title) and not blacklist.search(
+    return teams_regex.search(submission.title) and not blacklist_regex.search(
         submission.title
     )
 
