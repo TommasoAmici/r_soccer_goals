@@ -1,13 +1,12 @@
+import asyncio
 import logging
 import os
-import re
-import time
 from typing import Optional
 
-import praw
-import telegram
+import asyncpraw
 import yt_dlp
-from praw.models import Submission
+from aiogram import Bot
+from asyncpraw.models import Submission
 
 from teams import blacklist_regex, teams_regex
 
@@ -58,7 +57,8 @@ def is_video(submission: Submission) -> bool:
     return False
 
 
-def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
+async def send_video(bot: Bot, submission: Submission, url: str) -> None:
+    logger.info("sending video", submission.title, url)
     bot.send_video(
         chat_id=os.environ["TELEGRAM_CHAT_ID"],
         video=url,
@@ -67,40 +67,36 @@ def send_video(bot: telegram.Bot, submission: Submission, url: str) -> None:
     )
 
 
-def process_submission(submission: Submission) -> None:
+async def process_submission(bot: Bot, submission: Submission) -> None:
     """
     For each submission
     - determines if it's a goal
     - extracts direct url
     - sends to telegram channel
     """
-    try:
-        bot = telegram.Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
-    except Exception as e:
-        logger.error(e)
-        raise e
     if is_video(submission):
         url = get_url(submission)
         if url is not None:
             try:
-                send_video(bot, submission, url)
-                return
+                await send_video(bot, submission, url)
             except Exception as e:
                 logger.error(e)
-                pass
-        # don't send tweets as links
-        if "twitter" not in submission.url:
-            bot.send_message(
-                chat_id=os.environ["TELEGRAM_CHAT_ID"],
-                text=f"{submission.title}\n\n{submission.url}",
-                disable_notification=True,
-            )
+                # if it fails to send video, send a link
+                # don't send tweets as links
+                if "twitter" not in submission.url:
+                    logger.info("sending as message", submission.title, submission.url)
+                    bot.send_message(
+                        chat_id=os.environ["TELEGRAM_CHAT_ID"],
+                        text=f"{submission.title}\n\n{submission.url}",
+                        disable_notification=True,
+                    )
 
 
-def main() -> None:
+async def main() -> None:
     logger.info("Started r_soccer_goals bot")
     try:
-        reddit = praw.Reddit(
+        bot = Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
+        reddit = asyncpraw.Reddit(
             client_id=os.environ["REDDIT_CLIENT_ID"],
             client_secret=os.environ["REDDIT_CLIENT_SECRET"],
             user_agent=os.environ["REDDIT_USER_AGENT"],
@@ -108,15 +104,15 @@ def main() -> None:
             username=os.environ["REDDIT_USERNAME"],
         )
         reddit.read_only = True
-        subreddit = reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
-        for submission in subreddit.stream.submissions(skip_existing=True):
+        subreddit = await reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
+        async for submission in subreddit.stream.submissions(skip_existing=True):
             logger.info(f"Processing post {submission.id}")
-            process_submission(submission)
+            await process_submission(bot, submission)
     except Exception as e:
         logger.error(e)
-        time.sleep(3)
-        main()
+        await asyncio.sleep(3)
+        asyncio.run(main())
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
