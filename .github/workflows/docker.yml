@@ -22,34 +22,10 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
-  changelog:
+  build:
+    name: Build Docker image
     needs: test
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.changelog.outputs.version }}
-      body: ${{ steps.changelog.outputs.clean_changelog }}
-      tag: ${{ steps.changelog.outputs.tag }}
-      skipped: ${{ steps.changelog.outputs.skipped }}
-    steps:
-      - name: Checkout code 👋
-        uses: actions/checkout@v3
-      - name: Create changelog
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
-        with:
-          github-token: ${{ secrets.github_token }}
-          skip-version-file: "true"
-          output-file: "false"
-          skip-commit: "true"
-          skip-on-empty: "true"
-  push_to_registry:
-    name: Push Docker image to Docker Hub
-    needs: changelog
-    if: ${{ needs.changelog.outputs.skipped == 'false' }}
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -86,13 +62,19 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
-      - name: Tag HEAD
-        run: git tag ${{ needs.changelog.outputs.tag }}
+      - name: Create changelog
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-version-file: "true"
+          output-file: "false"
+          skip-commit: "true"
+          skip-on-empty: "true"
 
       - name: Create Release
-        run: |
-          echo "$BODY"
-          gh release create "$TAG_NAME" --notes "$BODY"
+        run: gh release create "$TAG_NAME" --notes "$BODY"
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ steps.changelog.outputs.tag }}
