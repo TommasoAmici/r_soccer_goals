@@ -1,4 +1,4 @@
-aiohttp[speedups]==3.8.1
+--extra-index-url https://alpine-wheels.github.io/index
 aiogram==2.22.1
 asyncpraw==7.5.0
 yt-dlp==2022.8.14
