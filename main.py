@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 import asyncpraw
+import uvloop
 import yt_dlp
 from aiogram import Bot
 from asyncpraw.models import Submission
@@ -15,6 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
 def get_url(submission: Submission) -> Optional[str]:
