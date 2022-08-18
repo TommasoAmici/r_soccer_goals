@@ -78,7 +78,11 @@ async def process_submission(bot: Bot, submission: Submission) -> None:
     - sends to telegram channel
     """
     if is_video(submission):
-        url = get_url(submission)
+        try:
+            url = get_url(submission)
+        except KeyError:
+            return
+
         if url is not None:
             try:
                 await send_video(bot, submission, url)
