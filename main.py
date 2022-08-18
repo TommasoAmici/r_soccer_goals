@@ -117,8 +117,6 @@ async def main() -> None:
             await process_submission(bot, submission)
     except Exception as e:
         logger.error(e)
-        await asyncio.sleep(3)
-        asyncio.run(main())
 
 
 if __name__ == "__main__":
