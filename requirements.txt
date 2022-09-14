@@ -2,4 +2,4 @@
 aiogram==2.22.1
 asyncpraw==7.5.0
 yt-dlp==2022.9.1
-uvloop==0.16.0
+uvloop==0.17.0
