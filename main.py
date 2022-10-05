@@ -38,9 +38,9 @@ def get_url(video_url: str) -> str | None:
 
 
 def is_goal(submission: Submission) -> bool:
-    return teams_regex.search(submission.title) and not blacklist_regex.search(
+    return teams_regex.search(
         submission.title
-    )
+    ) is not None and not blacklist_regex.search(submission.title)
 
 
 def is_video(submission: Submission) -> bool:
