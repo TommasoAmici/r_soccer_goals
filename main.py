@@ -29,6 +29,8 @@ def get_url(video_url: str) -> str | None:
         except:
             logger.error("Failed to extract video URL")
             return None
+    if result is None:
+        return None
     if "entries" in result:
         # Can be a playlist or a list of videos
         video = result["entries"][0]
