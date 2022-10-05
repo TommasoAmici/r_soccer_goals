@@ -39,7 +39,7 @@ if blacklist is None:
     blacklist = (
         "Youth",
         "Primavera",
-        "U\d+",
+        r"U\d+",
         "Inter Miami",
         "Inter Escaldes",
         "New England",

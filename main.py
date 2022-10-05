@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
-def get_url(video_url: str) -> Optional[str]:
+def get_url(video_url: str) -> str | None:
     result = {}
     with yt_dlp.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
         # mostly to handle tweets
