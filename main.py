@@ -56,6 +56,7 @@ def is_video(submission: Submission) -> bool:
         "kyouko.se",
         "twitter",
         "sporttube",
+        "dubz.co"
     )
     if any(s in submission.url for s in streams):
         return is_goal(submission)
