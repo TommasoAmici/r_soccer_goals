@@ -39,9 +39,10 @@ def get_url(video_url: str) -> str | None:
 
 
 def is_goal(submission: Submission) -> bool:
-    return teams_regex.search(
-        submission.title
-    ) is not None and not blacklist_regex.search(submission.title)
+    """Returns True if the submission's title matches the teams list"""
+    is_wanted_team = teams_regex.search(submission.title) is not None
+    is_blacklisted = blacklist_regex.search(submission.title)
+    return is_wanted_team and not is_blacklisted
 
 
 def is_video(submission: Submission) -> bool:
@@ -55,7 +56,7 @@ def is_video(submission: Submission) -> bool:
         "kyouko.se",
         "twitter",
         "sporttube",
-        "dubz.co"
+        "dubz.co",
     )
     if any(s in submission.url for s in streams):
         return is_goal(submission)
