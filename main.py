@@ -7,7 +7,6 @@ import uvloop
 import yt_dlp
 from aiogram import Bot
 from asyncpraw.models import Submission
-from asyncprawcore.exceptions import RequestException
 
 from teams import blacklist_regex, teams_regex
 
@@ -113,22 +112,11 @@ async def main() -> None:
         task = asyncio.create_task(worker(queue, bot))
         tasks.append(task)
 
-    reddit = None
-    try:
-        reddit = asyncpraw.Reddit(
-            client_id=os.environ["REDDIT_CLIENT_ID"],
-            client_secret=os.environ["REDDIT_CLIENT_SECRET"],
-            user_agent=os.environ["REDDIT_USER_AGENT"],
-            password=os.environ["REDDIT_PASSWORD"],
-            username=os.environ["REDDIT_USERNAME"],
-        )
-        reddit.read_only = True
-    except RequestException:
-        logger.error("Failed to connect to reddit")
-        exit(1)
-    if reddit is None:
-        exit(1)
-
+    reddit = asyncpraw.Reddit(
+        client_id=os.environ["REDDIT_CLIENT_ID"],
+        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
+        user_agent=os.environ["REDDIT_USER_AGENT"],
+    )
     subreddit = await reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
     async for submission in subreddit.stream.submissions(skip_existing=True):
         logger.debug(f"Processing post {submission.id}")
