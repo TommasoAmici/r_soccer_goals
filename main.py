@@ -7,6 +7,7 @@ import uvloop
 import yt_dlp
 from aiogram import Bot
 from asyncpraw.models import Submission
+from asyncprawcore.exceptions import RequestException
 
 from teams import blacklist_regex, teams_regex
 
@@ -116,6 +117,8 @@ async def main() -> None:
         client_id=os.environ["REDDIT_CLIENT_ID"],
         client_secret=os.environ["REDDIT_CLIENT_SECRET"],
         user_agent=os.environ["REDDIT_USER_AGENT"],
+        password=os.environ["REDDIT_PASSWORD"],
+        username=os.environ["REDDIT_USERNAME"],
         reddit_url="https://reddit.com",
     )
     subreddit = await reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])

@@ -33,6 +33,8 @@ A Telegram bot that reposts Serie A goals (or any type of content) from /r/socce
 - `REDDIT_CLIENT_ID`
 - `REDDIT_CLIENT_SECRET`
 - `REDDIT_USER_AGENT`
+- `REDDIT_USERNAME`
+- `REDDIT_PASSWORD`
 - `REDDIT_SUBREDDIT`: subreddit the bot will monitor for incoming posts
 - `TEAMS`: comma separated list of teams you want to receive goals for. e.g. "Juventus,Inter,Milan".
   Defaults to current Serie A teams.
