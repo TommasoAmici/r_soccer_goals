@@ -116,6 +116,7 @@ async def main() -> None:
         client_id=os.environ["REDDIT_CLIENT_ID"],
         client_secret=os.environ["REDDIT_CLIENT_SECRET"],
         user_agent=os.environ["REDDIT_USER_AGENT"],
+        reddit_url="https://reddit.com",
     )
     subreddit = await reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
     async for submission in subreddit.stream.submissions(skip_existing=True):
