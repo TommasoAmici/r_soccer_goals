@@ -1,23 +1,31 @@
 import asyncio
 import logging
 import os
+from dataclasses import dataclass
 
-import asyncpraw
+import aiohttp
 import uvloop
 import yt_dlp
 from aiogram import Bot
-from asyncpraw.models import Submission
-from asyncprawcore.exceptions import RequestException
 
 from teams import blacklist_regex, teams_regex
 
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
 logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+LIMIT = 10
+
+
+@dataclass
+class Submission:
+    id: str
+    url: str
+    title: str
 
 
 def get_url(video_url: str) -> str | None:
@@ -36,10 +44,10 @@ def get_url(video_url: str) -> str | None:
         video = result["entries"][0]
     else:
         video = result
-    return video["url"]
+    return video.get("url")
 
 
-def is_goal(submission: Submission) -> bool:
+def matches_wanted_teams(submission: Submission) -> bool:
     """Returns True if the submission's title matches the teams list"""
     is_wanted_team = teams_regex.search(submission.title) is not None
     is_blacklisted = blacklist_regex.search(submission.title)
@@ -60,7 +68,7 @@ def is_video(submission: Submission) -> bool:
         "dubz.co",
     )
     if any(s in submission.url for s in streams):
-        return is_goal(submission)
+        return True
     return False
 
 
@@ -68,12 +76,11 @@ async def send(bot: Bot, submission: Submission):
     """
     For each item in queue, extracts direct url and sends it to telegram channel
     """
-    try:
-        url = get_url(submission.url)
-    except KeyError:
-        return
+
+    url = get_url(submission.url)
+
     if url is not None:
-        logger.debug(f"sending video {url}")
+        logger.debug(f"{submission.id}: sending video {url}")
         try:
             await bot.send_video(
                 chat_id=os.environ["TELEGRAM_CHAT_ID"],
@@ -81,51 +88,94 @@ async def send(bot: Bot, submission: Submission):
                 caption=submission.title,
                 disable_notification=True,
             )
+            return
         except:
             logger.exception("Failed to send video URL to channel")
-            # if it fails to send video, send a link
-            # don't send tweets as links
-            if "twitter" not in submission.url:
-                logger.info("sending as message", submission.title, submission.url)
-                await bot.send_message(
-                    chat_id=os.environ["TELEGRAM_CHAT_ID"],
-                    text=f"{submission.title}\n\n{submission.url}",
-                    disable_notification=True,
-                )
+            pass
+    # if it fails to send video, send a link
+    # don't send tweets as links
+    if "twitter" not in submission.url:
+        logger.info("sending as message", submission.title, submission.url)
+        await bot.send_message(
+            chat_id=os.environ["TELEGRAM_CHAT_ID"],
+            text=f"{submission.title}\n\n{submission.url}",
+            disable_notification=True,
+        )
 
 
 async def worker(queue: asyncio.Queue, bot: Bot):
-    while True:
+    while not queue.empty():
         submission: Submission = await queue.get()
-        logger.debug(f"processing from queue: {submission.id}")
-        await asyncio.sleep(30)
+        logger.info(f"{submission.id}: processing from queue")
         await send(bot, submission)
         queue.task_done()
 
 
-async def main() -> None:
+async def fetch_submissions(
+    subreddit: str, queue: asyncio.Queue, already_processed: list[str]
+):
+    """
+    Fetches the latest posts from the given subreddit and processes
+    each submission, adding all videos that match the required filters to the download queue
+    """
+    logger.info("fetching submissions")
+
+    async with aiohttp.ClientSession() as session:
+        url = f"https://reddit.com/r/{subreddit}/new.json?limit={LIMIT}"
+
+        async with session.get(url) as response:
+            res_json = await response.json()
+            if res_json.get("data") is None:
+                logger.error("failed to load data from subreddit")
+                return
+
+            for _child in res_json["data"].get("children", []):
+                child = _child["data"]
+
+                submission = Submission(child["id"], child["url"], child["title"])
+
+                if submission.id in already_processed:
+                    logger.debug(
+                        f"{submission.id}: skipping already processed submission"
+                    )
+                    continue
+
+                logger.debug(f"{submission.id}: processing")
+
+                if is_video(submission) and matches_wanted_teams(submission):
+                    logger.debug(f"{submission.id}: adding to queue")
+                    await queue.put(submission)
+
+                already_processed.append(submission.id)
+
+
+async def main():
+    """
+    Every 10 seconds re-fetch submissions
+    """
+    subreddit = os.environ.get("REDDIT_SUBREDDIT", "soccer")
     bot = Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
 
     queue = asyncio.Queue()
-    # Create three worker tasks to process the queue concurrently.
-    tasks = []
-    for i in range(3):
-        task = asyncio.create_task(worker(queue, bot))
-        tasks.append(task)
+    already_processed: list[str] = []
 
-    reddit = asyncpraw.Reddit(
-        client_id=os.environ["REDDIT_CLIENT_ID"],
-        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
-        user_agent=os.environ["REDDIT_USER_AGENT"],
-        password=os.environ["REDDIT_PASSWORD"],
-        username=os.environ["REDDIT_USERNAME"],
-        reddit_url="https://reddit.com",
-    )
-    subreddit = await reddit.subreddit(os.environ["REDDIT_SUBREDDIT"])
-    async for submission in subreddit.stream.submissions(skip_existing=True):
-        logger.debug(f"Processing post {submission.id}")
-        if is_video(submission):
-            await queue.put(submission)
+    while True:
+        await fetch_submissions(subreddit, queue, already_processed)
+
+        # since we limit each request to LIMIT submissions we can keep the list of already
+        # processed items to a length of LIMIT
+        already_processed = already_processed[-LIMIT:]
+
+        # here we wait 20 seconds because sometimes the clips uploaded take some time to
+        # be processed by the host, which means we cannot download them.
+        await asyncio.sleep(20)
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(worker(queue, bot))
+            tg.create_task(worker(queue, bot))
+
+        # wait 20 seconds to avoid flooding reddit with too many requests
+        await asyncio.sleep(20)
 
 
 if __name__ == "__main__":

@@ -1,29 +1,53 @@
-from dataclasses import dataclass
-
 import pytest
 
-from main import is_goal, is_video
+from main import Submission, is_video, matches_wanted_teams
 
 
-@dataclass
-class Post:
-    title: str
-    url: str
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        (
+            Submission(
+                "yi4g0d",
+                "streamja/best-goal",
+                "Juventus 1-[2] Torino Belotti great goal",
+            ),
+            True,
+        ),
+        (
+            Submission(
+                "yi4g0d",
+                "gazzetta.it",
+                "Juventus Primavera [7]-2 Albinoleffe Dybala",
+            ),
+            False,
+        ),
+    ],
+)
+def test_is_video(input, expected):
+    assert is_video(input) is expected
 
-    def __init__(self, title: str, url: str):
-        self.title = title
-        self.url = url
 
-
-def test_is_goal():
-    p = Post("Juventus 1-[2] Torino Belotti great goal", "streamja/best-goal")
-    assert is_goal(p) is True
-    p = Post("Juventus Primavera [7]-2 Albinoleffe Dybala", "gazzetta.it")
-    assert is_goal(p) is False
-
-
-def test_is_video():
-    p = Post("Juventus 1-[2] Torino Belotti great goal", "streamja/best-goal")
-    assert is_video(p) is True
-    p = Post("Juventus Primavera [7]-2 Albinoleffe Dybala", "gazzetta.it")
-    assert is_video(p) is False
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        (
+            Submission(
+                "yi4g0d",
+                "streamja/best-goal",
+                "Juventus 1-[2] Torino Belotti great goal",
+            ),
+            True,
+        ),
+        (
+            Submission(
+                "yi4g0d",
+                "gazzetta.it",
+                "Juventus Primavera [7]-2 Albinoleffe Dybala",
+            ),
+            False,
+        ),
+    ],
+)
+def test_matches_wanted_teams(input, expected):
+    assert matches_wanted_teams(input) is expected
