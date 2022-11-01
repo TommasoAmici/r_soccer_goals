@@ -165,7 +165,7 @@ async def fetch_submissions(
                     child["link_flair_css_class"],
                 )
 
-                if submission.id in already_processed:
+                if submission.url in already_processed:
                     logger.debug(
                         f"{submission.id}: skipping already processed submission"
                     )
@@ -177,7 +177,7 @@ async def fetch_submissions(
                     logger.debug(f"{submission.id}: adding to queue")
                     await queue.put(submission)
 
-                already_processed.append(submission.id)
+                already_processed.append(submission.url)
 
 
 async def main():
@@ -192,10 +192,8 @@ async def main():
 
     while True:
         await fetch_submissions(subreddit, queue, already_processed)
-
-        # since we limit each request to LIMIT submissions we can keep the list of already
-        # processed items to a length of LIMIT
-        already_processed = already_processed[-LIMIT:]
+        # keep last 100 URLs in a list to check we don't submit the same video over and over
+        already_processed = already_processed[-100:]
 
         # here we wait 20 seconds because sometimes the clips uploaded take some time to
         # be processed by the host, which means we cannot download them.
