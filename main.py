@@ -26,6 +26,7 @@ class Submission:
     id: str
     url: str
     title: str
+    flair: str
 
 
 def get_url(video_url: str) -> str | None:
@@ -55,6 +56,9 @@ def matches_wanted_teams(submission: Submission) -> bool:
 
 
 def is_video(submission: Submission) -> bool:
+    if submission.flair == "media":
+        return True
+
     streams = (
         "stream",
         "clip",
@@ -132,7 +136,12 @@ async def fetch_submissions(
             for _child in res_json["data"].get("children", []):
                 child = _child["data"]
 
-                submission = Submission(child["id"], child["url"], child["title"])
+                submission = Submission(
+                    child["id"],
+                    child["url"],
+                    child["title"],
+                    child["link_flair_css_class"],
+                )
 
                 if submission.id in already_processed:
                     logger.debug(
