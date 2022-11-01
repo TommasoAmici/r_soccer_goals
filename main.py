@@ -134,7 +134,6 @@ async def send(bot: Bot, submission: Submission):
                 chat_id=os.environ["TELEGRAM_CHAT_ID"],
                 video=url,
                 caption=submission.title,
-                disable_notification=True,
             )
             return
         except:
@@ -143,12 +142,18 @@ async def send(bot: Bot, submission: Submission):
     # if it fails to send video, send a link
     # don't send tweets as links
     if "twitter" not in submission.url:
-        logger.info("sending as message", submission.title, submission.url)
-        await bot.send_message(
-            chat_id=os.environ["TELEGRAM_CHAT_ID"],
-            text=f"{submission.title}\n\n{submission.url}",
-            disable_notification=True,
-        )
+        try:
+            await bot.send_video(
+                chat_id=os.environ["TELEGRAM_CHAT_ID"],
+                video=submission.url,
+                caption=submission.title,
+            )
+        except:
+            logger.info("sending as message", submission.title, submission.url)
+            await bot.send_message(
+                chat_id=os.environ["TELEGRAM_CHAT_ID"],
+                text=f"{submission.title}\n\n{submission.url}",
+            )
 
 
 async def worker(queue: asyncio.Queue, bot: Bot):
