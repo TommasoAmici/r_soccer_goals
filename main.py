@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass
+from datetime import datetime
 
 import aiohttp
 import uvloop
@@ -27,6 +28,27 @@ class Submission:
     url: str
     title: str
     flair: str
+
+
+class Schedule:
+    """
+    Schedule is a class with helpers to determine the frequency with which
+    we should query reddit for new content
+    """
+
+    def __init__(self):
+        self.time = datetime.utcnow()
+
+    @property
+    def is_night(self) -> bool:
+        return self.time.hour > 1 and self.time.hour < 12
+
+    @property
+    def refresh_frequency(self) -> int:
+        # during the night there is no Serie A
+        if self.is_night:
+            return 60 * 5
+        return 60
 
 
 def get_url(video_url: str) -> str | None:
@@ -184,7 +206,7 @@ async def main():
             tg.create_task(worker(queue, bot))
 
         # wait 20 seconds to avoid flooding reddit with too many requests
-        await asyncio.sleep(20)
+        await asyncio.sleep(Schedule().refresh_frequency)
 
 
 if __name__ == "__main__":
