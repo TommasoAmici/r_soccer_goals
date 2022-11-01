@@ -37,18 +37,40 @@ class Schedule:
     """
 
     def __init__(self):
-        self.time = datetime.utcnow()
+        self.now = datetime.utcnow()
 
     @property
-    def is_night(self) -> bool:
-        return self.time.hour > 1 and self.time.hour < 12
+    def is_saturday(self):
+        return self.now.day == 5
+
+    @property
+    def is_sunday(self):
+        return self.now.day == 6
+
+    @property
+    def is_afternoon(self):
+        return self.now.hour > 11 and self.now.hour < 17
+
+    @property
+    def is_evening(self):
+        return self.now.hour > 17 and self.now.hour < 23
+
+    @property
+    def is_night(self):
+        return self.now.hour > 1 and self.now.hour < 12
 
     @property
     def refresh_frequency(self) -> int:
         # during the night there is no Serie A
         if self.is_night:
             return 60 * 5
-        return 60
+        if self.is_evening:
+            return 60
+        if (self.is_saturday or self.is_sunday) and (
+            self.is_afternoon or self.is_evening
+        ):
+            return 60
+        return 60 * 2
 
 
 def get_url(video_url: str) -> str | None:
