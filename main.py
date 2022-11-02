@@ -149,7 +149,7 @@ async def send(bot: Bot, submission: Submission):
                 caption=submission.title,
             )
         except:
-            logger.info("sending as message", submission.title, submission.url)
+            logger.info(f"{submission.id}: sending as message")
             await bot.send_message(
                 chat_id=os.environ["TELEGRAM_CHAT_ID"],
                 text=f"{submission.title}\n\n{submission.url}",
