@@ -8,6 +8,7 @@ import aiohttp
 import uvloop
 import yt_dlp
 from aiogram import Bot
+from aiogram.utils.exceptions import WrongFileIdentifier
 
 from teams import blacklist_regex, teams_regex
 
@@ -136,8 +137,10 @@ async def send(bot: Bot, submission: Submission):
                 caption=submission.title,
             )
             return
-        except:
-            logger.exception("Failed to send video URL to channel")
+        except WrongFileIdentifier:
+            logger.error(
+                f"{submission.id}: failed to send video to channel, url: {url}"
+            )
             pass
     # if it fails to send video, send a link
     # don't send tweets as links
@@ -148,7 +151,7 @@ async def send(bot: Bot, submission: Submission):
                 video=submission.url,
                 caption=submission.title,
             )
-        except:
+        except WrongFileIdentifier:
             logger.info(f"{submission.id}: sending as message")
             await bot.send_message(
                 chat_id=os.environ["TELEGRAM_CHAT_ID"],
