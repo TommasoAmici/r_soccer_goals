@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import time
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,9 +9,17 @@ import aiohttp
 import uvloop
 from aiogram import Bot
 from aiogram.utils.exceptions import WrongFileIdentifier
+from redis import StrictRedis
 from yt_dlp import YoutubeDL
 
 from teams import blacklist_regex, teams_regex
+
+cache = StrictRedis(
+    os.environ.get("REDIS_HOST", "localhost"),
+    int(os.environ.get("REDIS_PORT", "6379")),
+    charset="utf-8",
+    decode_responses=True,
+)
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -21,6 +30,10 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 LIMIT = 10
+CACHE_PREFIX = "r_soccer_goals"
+SUBMISSIONS_KEY = f"{CACHE_PREFIX}:submissions"
+QUEUE_KEY = f"{CACHE_PREFIX}:queue"
+PROCESSED_KEY = f"{CACHE_PREFIX}:processed"
 
 
 @dataclass
@@ -28,7 +41,38 @@ class Submission:
     id: str
     url: str
     title: str
-    flair: str
+    flair: str | None
+
+    @classmethod
+    def get(cls, id):
+        submission = cache.hgetall(f"{SUBMISSIONS_KEY}:{id}")
+        return Submission(id, submission["url"], submission["title"], None)
+
+    @property
+    def key(self):
+        return f"{SUBMISSIONS_KEY}:{self.id}"
+
+    def add_to_queue(self):
+        """
+        Stores submission data in Redis for later retrieval and adds submission to
+        the queue for processing. The cached data expires after 24 hours.
+        """
+        cache.hset(
+            self.key,
+            mapping={
+                "id": self.id,
+                "url": self.url,
+                "title": self.title,
+            },
+        )
+        cache.expire(self.key, 86400)
+        cache.lpush(QUEUE_KEY, self.id)
+
+    def add_to_processed(self):
+        cache.zadd(PROCESSED_KEY, {self.id: time.monotonic()})
+
+    def already_processed(self) -> bool:
+        return cache.zscore(PROCESSED_KEY, self.id) is not None
 
     def is_video(self) -> bool:
         if self.flair == "media":
@@ -133,7 +177,7 @@ async def send(bot: Bot, submission: Submission):
     For each item in queue, extracts direct url and sends it to telegram channel
     """
 
-    url = get_url(submission.url)
+    url = await get_url(submission.url)
 
     if url is not None:
         logger.debug(f"{submission.id}: sending video {url}")
@@ -166,17 +210,17 @@ async def send(bot: Bot, submission: Submission):
             )
 
 
-async def worker(queue: asyncio.Queue, bot: Bot):
-    while not queue.empty():
-        submission: Submission = await queue.get()
+async def worker(bot: Bot):
+    while True:
+        submission_id = cache.rpop(QUEUE_KEY)
+        if submission_id is None:
+            return
+        submission = Submission.get(submission_id)
         logger.info(f"{submission.id}: processing from queue")
         await send(bot, submission)
-        queue.task_done()
 
 
-async def fetch_submissions(
-    subreddit: str, queue: asyncio.Queue, already_processed: list[str]
-):
+async def fetch_submissions(subreddit: str):
     """
     Fetches the latest posts from the given subreddit and processes each submission,
     adding all videos that match the required filters to the download queue
@@ -202,7 +246,7 @@ async def fetch_submissions(
                     child["link_flair_css_class"],
                 )
 
-                if submission.url in already_processed:
+                if submission.already_processed():
                     logger.debug(
                         f"{submission.id}: skipping already processed submission"
                     )
@@ -212,9 +256,9 @@ async def fetch_submissions(
 
                 if submission.is_video() and submission.matches_wanted_teams():
                     logger.debug(f"{submission.id}: adding to queue")
-                    await queue.put(submission)
+                    submission.add_to_queue()
 
-                already_processed.append(submission.url)
+                submission.add_to_processed()
 
 
 async def main():
@@ -224,21 +268,15 @@ async def main():
     subreddit = os.environ.get("REDDIT_SUBREDDIT", "soccer")
     bot = Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
 
-    queue = asyncio.Queue()
-    already_processed: list[str] = []
-
     while True:
-        await fetch_submissions(subreddit, queue, already_processed)
-        # keep last 100 URLs in a list to check we don't submit the same video again
-        already_processed = already_processed[-100:]
-
+        await fetch_submissions(subreddit)
         # here we wait 20 seconds because sometimes the clips uploaded take some time to
         # be processed by the host, which means we cannot download them.
         await asyncio.sleep(20)
 
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(worker(queue, bot))
-            tg.create_task(worker(queue, bot))
+            tg.create_task(worker(bot))
+            tg.create_task(worker(bot))
 
         # wait 20 seconds to avoid flooding reddit with too many requests
         await asyncio.sleep(Schedule().refresh_frequency)
