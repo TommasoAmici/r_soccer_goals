@@ -171,8 +171,8 @@ async def fetch_submissions(
     subreddit: str, queue: asyncio.Queue, already_processed: list[str]
 ):
     """
-    Fetches the latest posts from the given subreddit and processes
-    each submission, adding all videos that match the required filters to the download queue
+    Fetches the latest posts from the given subreddit and processes each submission,
+    adding all videos that match the required filters to the download queue
     """
     logger.info("fetching submissions")
 
@@ -222,7 +222,7 @@ async def main():
 
     while True:
         await fetch_submissions(subreddit, queue, already_processed)
-        # keep last 100 URLs in a list to check we don't submit the same video over and over
+        # keep last 100 URLs in a list to check we don't submit the same video again
         already_processed = already_processed[-100:]
 
         # here we wait 20 seconds because sometimes the clips uploaded take some time to
