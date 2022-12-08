@@ -36,6 +36,14 @@ QUEUE_KEY = f"{CACHE_PREFIX}:queue"
 PROCESSED_KEY = f"{CACHE_PREFIX}:processed"
 
 
+def clean_zset(before=60 * 60 * 24 * 3):
+    """
+    Removes elements added more than three days ago to the ZSET of processed submissions
+    """
+    now = time.monotonic()
+    cache.zremrangebyscore(PROCESSED_KEY, 0, now - before)
+
+
 @dataclass
 class Submission:
     id: str
@@ -279,6 +287,7 @@ async def main():
             tg.create_task(worker(bot))
 
         # wait 20 seconds to avoid flooding reddit with too many requests
+        clean_zset()
         await asyncio.sleep(Schedule().refresh_frequency)
 
 
