@@ -6,9 +6,9 @@ from datetime import datetime
 
 import aiohttp
 import uvloop
-import yt_dlp
 from aiogram import Bot
 from aiogram.utils.exceptions import WrongFileIdentifier
+from yt_dlp import YoutubeDL
 
 from teams import blacklist_regex, teams_regex
 
@@ -74,9 +74,11 @@ class Schedule:
         return 60 * 2
 
 
-def get_url(video_url: str) -> str | None:
+async def get_url(video_url: str) -> str | None:
     result = {}
-    with yt_dlp.YoutubeDL({"quiet": True, "no_check_certificate": True}) as ydl:
+    with YoutubeDL(
+        {"quiet": True, "no_check_certificate": True, "logger": logger}
+    ) as ydl:
         # mostly to handle tweets
         try:
             result = ydl.extract_info(video_url, download=False)
@@ -90,7 +92,14 @@ def get_url(video_url: str) -> str | None:
         video = result["entries"][0]
     else:
         video = result
-    return video.get("url")
+    if video.get("url") is None:
+        return None
+
+    async with aiohttp.ClientSession() as session:
+        async with session.head(video["url"], allow_redirects=True) as response:
+            if response.status != 200:
+                return None
+            return str(response.url)
 
 
 def matches_wanted_teams(submission: Submission) -> bool:
