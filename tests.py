@@ -1,10 +1,10 @@
 import pytest
 
-from main import Submission, is_video, matches_wanted_teams
+from main import Submission
 
 
 @pytest.mark.parametrize(
-    "input,expected",
+    "submission,expected",
     [
         (
             Submission(
@@ -35,12 +35,12 @@ from main import Submission, is_video, matches_wanted_teams
         ),
     ],
 )
-def test_is_video(input, expected):
-    assert is_video(input) is expected
+def test_is_video(submission: Submission, expected):
+    assert submission.is_video() is expected
 
 
 @pytest.mark.parametrize(
-    "input,expected",
+    "submission,expected",
     [
         (
             Submission(
@@ -62,5 +62,5 @@ def test_is_video(input, expected):
         ),
     ],
 )
-def test_matches_wanted_teams(input, expected):
-    assert matches_wanted_teams(input) is expected
+def test_matches_wanted_teams(submission: Submission, expected):
+    assert submission.matches_wanted_teams() is expected

@@ -30,6 +30,32 @@ class Submission:
     title: str
     flair: str
 
+    def is_video(self) -> bool:
+        if self.flair == "media":
+            return True
+
+        streams = (
+            "stream",
+            "clip",
+            "mixtape",
+            "flixtc",
+            "v.redd",
+            "a.pomfe.co",
+            "kyouko.se",
+            "twitter",
+            "sporttube",
+            "dubz.co",
+        )
+        if any(s in self.url for s in streams):
+            return True
+        return False
+
+    def matches_wanted_teams(self) -> bool:
+        """Returns True if the submission's title matches the teams list"""
+        is_wanted_team = teams_regex.search(self.title) is not None
+        is_blacklisted = blacklist_regex.search(self.title)
+        return is_wanted_team and not is_blacklisted
+
 
 class Schedule:
     """
@@ -100,34 +126,6 @@ async def get_url(video_url: str) -> str | None:
             if response.status != 200:
                 return None
             return str(response.url)
-
-
-def matches_wanted_teams(submission: Submission) -> bool:
-    """Returns True if the submission's title matches the teams list"""
-    is_wanted_team = teams_regex.search(submission.title) is not None
-    is_blacklisted = blacklist_regex.search(submission.title)
-    return is_wanted_team and not is_blacklisted
-
-
-def is_video(submission: Submission) -> bool:
-    if submission.flair == "media":
-        return True
-
-    streams = (
-        "stream",
-        "clip",
-        "mixtape",
-        "flixtc",
-        "v.redd",
-        "a.pomfe.co",
-        "kyouko.se",
-        "twitter",
-        "sporttube",
-        "dubz.co",
-    )
-    if any(s in submission.url for s in streams):
-        return True
-    return False
 
 
 async def send(bot: Bot, submission: Submission):
@@ -212,7 +210,7 @@ async def fetch_submissions(
 
                 logger.debug(f"{submission.id}: processing")
 
-                if is_video(submission) and matches_wanted_teams(submission):
+                if submission.is_video() and submission.matches_wanted_teams():
                     logger.debug(f"{submission.id}: adding to queue")
                     await queue.put(submission)
 
