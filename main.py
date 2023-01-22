@@ -180,6 +180,18 @@ async def get_url(video_url: str) -> str | None:
             return str(response.url)
 
 
+def is_image(url: str) -> bool:
+    """Returns True if the URL points to a static image"""
+    return any(
+        url.endswith(ext)
+        for ext in [
+            ".jpg",
+            ".png",
+            ".jpeg",
+        ]
+    )
+
+
 async def send(bot: Bot, submission: Submission):
     """
     For each item in queue, extracts direct url and sends it to telegram channel
@@ -187,35 +199,33 @@ async def send(bot: Bot, submission: Submission):
 
     url = await get_url(submission.url)
 
+    kwargs = dict(chat_id=os.environ["TELEGRAM_CHAT_ID"], caption=submission.title)
+
     if url is not None:
-        logger.debug(f"{submission.id}: sending video {url}")
-        try:
-            await bot.send_video(
-                chat_id=os.environ["TELEGRAM_CHAT_ID"],
-                video=url,
-                caption=submission.title,
-            )
-            return
-        except WrongFileIdentifier:
-            logger.error(
-                f"{submission.id}: failed to send video to channel, url: {url}"
-            )
-            pass
-    # if it fails to send video, send a link
-    # don't send tweets as links
+        logger.debug(f"{submission.id}: sending {url}")
+        if is_image(url):
+            try:
+                await bot.send_photo(photo=url, **kwargs)
+                return
+            except WrongFileIdentifier:
+                logger.error(f"{submission.id}: failed to send photo to channel")
+        else:
+            try:
+                await bot.send_video(video=url, **kwargs)
+                return
+            except WrongFileIdentifier:
+                logger.error(
+                    f"{submission.id}: failed to send video to channel, url: {url}"
+                )
+
+    # if it fails to send video, send a message including the link
+    # don't send tweets as links as they're more often than not just text
     if "twitter" not in submission.url:
-        try:
-            await bot.send_video(
-                chat_id=os.environ["TELEGRAM_CHAT_ID"],
-                video=submission.url,
-                caption=submission.title,
-            )
-        except WrongFileIdentifier:
-            logger.info(f"{submission.id}: sending as message")
-            await bot.send_message(
-                chat_id=os.environ["TELEGRAM_CHAT_ID"],
-                text=f"{submission.title}\n\n{submission.url}",
-            )
+        logger.debug(f"{submission.id}: sending as message")
+        await bot.send_message(
+            chat_id=os.environ["TELEGRAM_CHAT_ID"],
+            text=f"{submission.title}\n\n{submission.url}",
+        )
 
 
 async def worker(bot: Bot):
