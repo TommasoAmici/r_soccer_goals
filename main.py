@@ -8,7 +8,7 @@ from datetime import datetime
 import aiohttp
 import uvloop
 from aiogram import Bot
-from aiogram.utils.exceptions import WrongFileIdentifier
+from aiogram.utils.exceptions import WrongFileIdentifier, InvalidHTTPUrlContent
 from redis import StrictRedis
 from yt_dlp import YoutubeDL
 
@@ -207,13 +207,13 @@ async def send(bot: Bot, submission: Submission):
             try:
                 await bot.send_photo(photo=url, **kwargs)
                 return
-            except WrongFileIdentifier:
+            except (WrongFileIdentifier, InvalidHTTPUrlContent):
                 logger.error(f"{submission.id}: failed to send photo to channel")
         else:
             try:
                 await bot.send_video(video=url, **kwargs)
                 return
-            except WrongFileIdentifier:
+            except (WrongFileIdentifier, InvalidHTTPUrlContent):
                 logger.error(
                     f"{submission.id}: failed to send video to channel, url: {url}"
                 )
