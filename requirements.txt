@@ -3,4 +3,4 @@ aiogram==2.25.1
 aiohttp[speedups]==3.8.4
 yt-dlp==2023.3.4
 uvloop==0.17.0
-redis[hiredis]==4.5.5
+redis[hiredis]==4.6.0
