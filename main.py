@@ -246,7 +246,7 @@ async def fetch_submissions(subreddit: str):
     logger.info("fetching submissions")
 
     async with aiohttp.ClientSession() as session:
-        url = f"https://reddit.com/r/{subreddit}/new.json?limit={LIMIT}"
+        url = f"https://old.reddit.com/r/{subreddit}/new.json?limit={LIMIT}"
 
         async with session.get(url) as response:
             res_json = await response.json()
