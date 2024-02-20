@@ -120,11 +120,11 @@ class Schedule:
 
     @property
     def is_saturday(self):
-        return self.now.day == 5
+        return self.now.weekday() == 5
 
     @property
     def is_sunday(self):
-        return self.now.day == 6
+        return self.now.weekday() == 6
 
     @property
     def is_afternoon(self):
