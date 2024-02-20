@@ -160,8 +160,8 @@ async def get_url(video_url: str) -> str | None:
         # mostly to handle tweets
         try:
             result = ydl.extract_info(video_url, download=False)
-        except:
-            logger.error("Failed to extract video URL")
+        except:  # noqa: E722
+            logger.exception("Failed to extract video URL")
             return None
     if result is None:
         return None
@@ -202,26 +202,28 @@ async def send(bot: Bot, submission: Submission):
     kwargs = dict(chat_id=os.environ["TELEGRAM_CHAT_ID"], caption=submission.title)
 
     if url is not None:
-        logger.debug(f"{submission.id}: sending {url}")
+        logger.debug("%s: sending %s", submission.id, url)
         if is_image(url):
             try:
                 await bot.send_photo(photo=url, **kwargs)
                 return
             except (WrongFileIdentifier, InvalidHTTPUrlContent):
-                logger.error(f"{submission.id}: failed to send photo to channel")
+                logger.exception("%s: failed to send photo to channel", submission.id)
         else:
             try:
                 await bot.send_video(video=url, **kwargs)
                 return
             except (WrongFileIdentifier, InvalidHTTPUrlContent):
-                logger.error(
-                    f"{submission.id}: failed to send video to channel, url: {url}"
+                logger.exception(
+                    "%s: failed to send video to channel, url: %s",
+                    submission.id,
+                    url,
                 )
 
     # if it fails to send video, send a message including the link
     # don't send tweets as links as they're more often than not just text
     if "twitter" not in submission.url:
-        logger.debug(f"{submission.id}: sending as message")
+        logger.debug("%s: sending as message", submission.id)
         await bot.send_message(
             chat_id=os.environ["TELEGRAM_CHAT_ID"],
             text=f"{submission.title}\n\n{submission.url}",
@@ -234,7 +236,7 @@ async def worker(bot: Bot):
         if submission_id is None:
             return
         submission = Submission.get(submission_id)
-        logger.info(f"{submission.id}: processing from queue")
+        logger.info("%s: processing from queue", submission.id)
         await send(bot, submission)
 
 
@@ -266,14 +268,15 @@ async def fetch_submissions(subreddit: str):
 
                 if submission.already_processed():
                     logger.debug(
-                        f"{submission.id}: skipping already processed submission"
+                        "%s: skipping already processed submission",
+                        submission.id,
                     )
                     continue
 
-                logger.debug(f"{submission.id}: processing")
+                logger.debug("%s: processing", submission.id)
 
                 if submission.is_video() and submission.matches_wanted_teams():
-                    logger.debug(f"{submission.id}: adding to queue")
+                    logger.debug("%s: adding to queue", submission.id)
                     submission.add_to_queue()
 
                 submission.add_to_processed()
