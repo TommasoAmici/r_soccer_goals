@@ -14,3 +14,9 @@ runs:
 
     - run: pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
       shell: sh
+
+    - run: ruff format --check .
+      shell: sh
+
+    - run: ruff .
+      shell: sh
