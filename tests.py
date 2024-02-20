@@ -4,7 +4,7 @@ from main import Submission
 
 
 @pytest.mark.parametrize(
-    "submission,expected",
+    ("submission", "expected"),
     [
         (
             Submission(
@@ -40,7 +40,7 @@ def test_is_video(submission: Submission, expected):
 
 
 @pytest.mark.parametrize(
-    "submission,expected",
+    ("submission", "expected"),
     [
         (
             Submission(

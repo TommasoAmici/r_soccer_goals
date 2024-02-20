@@ -3,12 +3,13 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
+from http import HTTPStatus
 
 import aiohttp
 import uvloop
 from aiogram import Bot
-from aiogram.utils.exceptions import WrongFileIdentifier, InvalidHTTPUrlContent
+from aiogram.utils.exceptions import InvalidHTTPUrlContent, WrongFileIdentifier
 from redis import StrictRedis
 from yt_dlp import YoutubeDL
 
@@ -24,7 +25,8 @@ cache = StrictRedis(
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -52,9 +54,9 @@ class Submission:
     flair: str | None
 
     @classmethod
-    def get(cls, id):
-        submission = cache.hgetall(f"{SUBMISSIONS_KEY}:{id}")
-        return Submission(id, submission["url"], submission["title"], None)
+    def get(cls, submission_id: str):
+        submission = cache.hgetall(f"{SUBMISSIONS_KEY}:{submission_id}")
+        return Submission(submission_id, submission["url"], submission["title"], None)
 
     @property
     def key(self):
@@ -116,7 +118,7 @@ class Schedule:
     """
 
     def __init__(self):
-        self.now = datetime.utcnow()
+        self.now = datetime.now(tz=UTC)
 
     @property
     def is_saturday(self):
@@ -155,7 +157,7 @@ class Schedule:
 async def get_url(video_url: str) -> str | None:
     result = {}
     with YoutubeDL(
-        {"quiet": True, "no_check_certificate": True, "logger": logger}
+        {"quiet": True, "no_check_certificate": True, "logger": logger},
     ) as ydl:
         # mostly to handle tweets
         try:
@@ -173,11 +175,13 @@ async def get_url(video_url: str) -> str | None:
     if video.get("url") is None:
         return None
 
-    async with aiohttp.ClientSession() as session:
-        async with session.head(video["url"], allow_redirects=True) as response:
-            if response.status != 200:
-                return None
-            return str(response.url)
+    async with aiohttp.ClientSession() as session, session.head(
+        video["url"],
+        allow_redirects=True,
+    ) as response:
+        if response.status != HTTPStatus.OK:
+            return None
+        return str(response.url)
 
 
 def is_image(url: str) -> bool:
@@ -199,20 +203,21 @@ async def send(bot: Bot, submission: Submission):
 
     url = await get_url(submission.url)
 
-    kwargs = dict(chat_id=os.environ["TELEGRAM_CHAT_ID"], caption=submission.title)
+    kwargs = {
+        "chat_id": os.environ["TELEGRAM_CHAT_ID"],
+        "caption": submission.title,
+    }
 
     if url is not None:
         logger.debug("%s: sending %s", submission.id, url)
         if is_image(url):
             try:
                 await bot.send_photo(photo=url, **kwargs)
-                return
             except (WrongFileIdentifier, InvalidHTTPUrlContent):
                 logger.exception("%s: failed to send photo to channel", submission.id)
         else:
             try:
                 await bot.send_video(video=url, **kwargs)
-                return
             except (WrongFileIdentifier, InvalidHTTPUrlContent):
                 logger.exception(
                     "%s: failed to send video to channel, url: %s",
