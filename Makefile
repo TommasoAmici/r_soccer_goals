@@ -31,3 +31,9 @@ build:
 
 run: venv
 	${PY} main.py
+
+format: venv
+	${BIN}/ruff format .
+
+lint: venv
+	${BIN}/ruff .
