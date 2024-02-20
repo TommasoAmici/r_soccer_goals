@@ -44,6 +44,9 @@ select = [
 ignore = [
   "PLR2004", # asks to change every value comparisons with constants, overkill
   "SIM108",  # converts all if-else assignments to ternary, this is not always more readable
+  # conflict with ruff format
+  "COM812",
+  "ISC001",
 ]
 
 [tool.ruff.lint.per-file-ignores]
