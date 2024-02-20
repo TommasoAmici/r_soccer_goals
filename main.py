@@ -188,11 +188,11 @@ def is_image(url: str) -> bool:
     """Returns True if the URL points to a static image"""
     return any(
         url.endswith(ext)
-        for ext in [
+        for ext in (
             ".jpg",
             ".png",
             ".jpeg",
-        ]
+        )
     )
 
 
