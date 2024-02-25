@@ -2,3 +2,4 @@
 pytest
 pytest-cov
 pdbpp
+ruff==0.2.2

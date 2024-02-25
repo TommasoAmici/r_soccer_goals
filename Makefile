@@ -8,12 +8,11 @@ PYTEST = ${PY} -m pytest
 venv: .venv/touchfile
 
 # touching a file makes it possible to run this rule only when requirements.txt changes
-.venv/touchfile: requirements.txt requirements_test.txt requirements_dev.txt
+.venv/touchfile: requirements.txt requirements_test.txt
 	[ -d .venv ] || python3 -m venv .venv
 	${PIP_INSTALL} --upgrade pip wheel
 	${PIP_INSTALL} -r requirements.txt
 	${PIP_INSTALL} -r requirements_test.txt
-	${PIP_INSTALL} -r requirements_dev.txt
 	touch .venv/touchfile
 
 venv_clean:
