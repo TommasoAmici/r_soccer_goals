@@ -202,37 +202,39 @@ async def send(bot: Bot, submission: Submission):
     """
 
     url = await get_url(submission.url)
+    if url is None:
+        return
 
     kwargs = {
         "chat_id": os.environ["TELEGRAM_CHAT_ID"],
         "caption": submission.title,
     }
 
-    if url is not None:
-        logger.debug("%s: sending %s", submission.id, url)
-        if is_image(url):
-            try:
-                await bot.send_photo(photo=url, **kwargs)
-            except (WrongFileIdentifier, InvalidHTTPUrlContent):
-                logger.exception("%s: failed to send photo to channel", submission.id)
-        else:
-            try:
-                await bot.send_video(video=url, **kwargs)
-            except (WrongFileIdentifier, InvalidHTTPUrlContent):
-                logger.exception(
-                    "%s: failed to send video to channel, url: %s",
-                    submission.id,
-                    url,
+    logger.debug("%s: sending %s", submission.id, url)
+    if is_image(url):
+        try:
+            await bot.send_photo(photo=url, **kwargs)
+        except (WrongFileIdentifier, InvalidHTTPUrlContent):
+            logger.exception(
+                "%s: failed to send photo to channel, url: %s", submission.id, url
+            )
+    else:
+        try:
+            await bot.send_video(video=url, **kwargs)
+        except (WrongFileIdentifier, InvalidHTTPUrlContent):
+            logger.exception(
+                "%s: failed to send video to channel, url: %s",
+                submission.id,
+                url,
+            )
+            # if it fails to send video, send a message including the link
+            # don't send tweets as links as they're more often than not just text
+            if "twitter" not in submission.url:
+                logger.debug("%s: sending as message", submission.id)
+                await bot.send_message(
+                    chat_id=kwargs["chat_id"],
+                    text=f"{submission.title}\n\n{submission.url}",
                 )
-
-    # if it fails to send video, send a message including the link
-    # don't send tweets as links as they're more often than not just text
-    if "twitter" not in submission.url:
-        logger.debug("%s: sending as message", submission.id)
-        await bot.send_message(
-            chat_id=os.environ["TELEGRAM_CHAT_ID"],
-            text=f"{submission.title}\n\n{submission.url}",
-        )
 
 
 async def worker(bot: Bot):
