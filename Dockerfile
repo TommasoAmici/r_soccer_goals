@@ -11,5 +11,6 @@ COPY --from=build-python /root/.local /root/.local
 # Make sure scripts in .local are usable:
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONUNBUFFERED 1
-COPY main.py teams.py /
+# TODO make src/ directory
+COPY main.py teams.py user_agents.py /
 CMD ["python", "main.py"]

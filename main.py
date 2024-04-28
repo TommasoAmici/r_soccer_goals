@@ -14,6 +14,7 @@ from redis import StrictRedis
 from yt_dlp import YoutubeDL
 
 from teams import blacklist_regex, teams_regex
+from user_agents import get_user_agent
 
 cache = StrictRedis(
     os.environ.get("REDIS_HOST", "localhost"),
@@ -253,8 +254,12 @@ async def fetch_submissions(subreddit: str):
     adding all videos that match the required filters to the download queue
     """
     logger.info("fetching submissions")
-
-    async with aiohttp.ClientSession() as session:
+    headers = {
+        "referer": "https://www.reddit.com/",
+        "accept": "application/json",
+        "user-agent": get_user_agent(),
+    }
+    async with aiohttp.ClientSession(headers=headers) as session:
         url = f"https://old.reddit.com/r/{subreddit}/new.json?limit={LIMIT}"
 
         async with session.get(url) as response:
