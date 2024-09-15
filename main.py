@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-import time
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from http import HTTPStatus
@@ -11,18 +11,80 @@ import asyncpraw
 import uvloop
 from aiogram import Bot
 from aiogram.utils.exceptions import InvalidHTTPUrlContent, WrongFileIdentifier
-from redis import StrictRedis
 from yt_dlp import YoutubeDL
-
 
 from teams import blacklist_regex, teams_regex
 
-cache = StrictRedis(
-    os.environ.get("REDIS_HOST", "localhost"),
-    int(os.environ.get("REDIS_PORT", "6379")),
-    charset="utf-8",
-    decode_responses=True,
-)
+
+class Queue:
+    def __init__(self, db: sqlite3.Connection):
+        self.conn = db
+        self.cursor = self.conn.cursor()
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS queue (
+                id TEXT PRIMARY KEY,
+                url TEXT NOT NULL,
+                title TEXT NOT NULL,
+                processed TIMESTAMP
+            )
+            """
+        )
+
+    def add(self, submission_id: str, url: str, title: str, *, processed=False):
+        if processed:
+            self.cursor.execute(
+                """
+                INSERT INTO queue (id, url, title, processed)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                (submission_id, url, title),
+            )
+        else:
+            self.cursor.execute(
+                "INSERT INTO queue (id, url, title) VALUES (?, ?, ?)",
+                (submission_id, url, title),
+            )
+        self.conn.commit()
+
+    def pop(self):
+        row = self.cursor.execute(
+            "SELECT id, url, title FROM queue WHERE processed IS NULL"
+        ).fetchone()
+        if not row:
+            return None
+        self.cursor.execute(
+            "UPDATE queue SET processed = CURRENT_TIMESTAMP WHERE id = ?", (row[0],)
+        )
+        self.conn.commit()
+        return {
+            "id": row[0],
+            "url": row[1],
+            "title": row[2],
+        }
+
+    def already_processed(self, submission_id: str) -> bool:
+        self.cursor.execute(
+            "SELECT 1 FROM queue WHERE id = ? AND processed IS NOT NULL",
+            (submission_id,),
+        )
+        return self.cursor.fetchone() is not None
+
+    def clear(self):
+        self.cursor.execute(
+            """
+            DELETE FROM queue
+            WHERE processed IS NOT NULL AND processed < DATETIME('now', '-3 day')
+            """
+        )
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+
+db = sqlite3.connect(os.getenv("DB_PATH", "r_soccer_goals.db"))
+cache = Queue(db)
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -34,18 +96,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG if os.getenv("DEBUG") else logging.INFO)
 
 LIMIT = 10
-CACHE_PREFIX = "r_soccer_goals"
-SUBMISSIONS_KEY = f"{CACHE_PREFIX}:submissions"
-QUEUE_KEY = f"{CACHE_PREFIX}:queue"
-PROCESSED_KEY = f"{CACHE_PREFIX}:processed"
-
-
-def clean_zset(before=60 * 60 * 24 * 3):
-    """
-    Removes elements added more than three days ago to the ZSET of processed submissions
-    """
-    now = time.monotonic()
-    cache.zremrangebyscore(PROCESSED_KEY, 0, now - before)
 
 
 @dataclass
@@ -56,35 +106,22 @@ class Submission:
     flair: str | None
 
     @classmethod
-    def get(cls, submission_id: str):
-        submission = cache.hgetall(f"{SUBMISSIONS_KEY}:{submission_id}")
-        return Submission(submission_id, submission["url"], submission["title"], None)
-
-    @property
-    def key(self):
-        return f"{SUBMISSIONS_KEY}:{self.id}"
-
-    def add_to_queue(self):
-        """
-        Stores submission data in Redis for later retrieval and adds submission to
-        the queue for processing. The cached data expires after 24 hours.
-        """
-        cache.hset(
-            self.key,
-            mapping={
-                "id": self.id,
-                "url": self.url,
-                "title": self.title,
-            },
+    def pop(cls):
+        submission = cache.pop()
+        if submission is None:
+            return None
+        return Submission(
+            submission["id"],
+            submission["url"],
+            submission["title"],
+            None,
         )
-        cache.expire(self.key, 86400)
-        cache.lpush(QUEUE_KEY, self.id)
 
-    def add_to_processed(self):
-        cache.zadd(PROCESSED_KEY, {self.id: time.monotonic()})
+    def add_to_queue(self, *, processed=False):
+        cache.add(self.id, self.url, self.title, processed=processed)
 
     def already_processed(self) -> bool:
-        return cache.zscore(PROCESSED_KEY, self.id) is not None
+        return cache.already_processed(self.id)
 
     def is_video(self) -> bool:
         if self.flair == "media":
@@ -239,18 +276,18 @@ async def send(bot: Bot, submission: Submission):
 
 async def worker(bot: Bot):
     while True:
-        submission_id = cache.rpop(QUEUE_KEY)
-        if submission_id is None:
+        submission = Submission.pop()
+        if submission is None:
             return
-        submission = Submission.get(submission_id)
         logger.info("%s: processing from queue", submission.id)
         await send(bot, submission)
 
 
 async def fetch_submissions(subreddit: str):
     """
-    Fetches the latest posts from the given subreddit using asyncpraw and processes each submission,
-    adding all videos that match the required filters to the download queue
+    Fetches the latest posts from the given subreddit using asyncpraw and processes
+    each submission, adding all videos that match the required filters to the
+    download queue
     """
     logger.info("fetching submissions")
     reddit = asyncpraw.Reddit(
@@ -286,14 +323,11 @@ async def fetch_submissions(subreddit: str):
         if submission_data.is_video() and teams_regex.search(submission_data.title):
             logger.info("%s: adding to queue", submission_data.id)
             submission_data.add_to_queue()
-
-        submission_data.add_to_processed()
+        else:
+            submission_data.add_to_queue(processed=True)
 
 
 async def main():
-    """
-    Every 10 seconds re-fetch submissions
-    """
     subreddit = os.environ.get("REDDIT_SUBREDDIT", "soccer")
     bot = Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
 
@@ -307,8 +341,8 @@ async def main():
             tg.create_task(worker(bot))
             tg.create_task(worker(bot))
 
-        # wait 20 seconds to avoid flooding reddit with too many requests
-        clean_zset()
+        # avoid flooding reddit with too many requests
+        cache.clear()
         await asyncio.sleep(Schedule().refresh_frequency)
 
 

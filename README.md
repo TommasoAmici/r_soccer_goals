@@ -38,3 +38,4 @@ docker run --env-file .env r_soccer_goals:latest
 - `REDDIT_SUBREDDIT`: subreddit the bot will monitor for incoming posts
 - `TEAMS`: comma separated list of teams you want to receive goals for. e.g. "Juventus,Inter,Milan".
   Defaults to current Serie A teams.
+- `DB_PATH`: path to the sqlite database file, defaults to `r_soccer_goals.db`

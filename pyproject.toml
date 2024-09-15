@@ -1,6 +1,10 @@
 [tool.ruff]
 line-length = 88
 
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 88
+
 [tool.ruff.lint]
 select = [
   "E",
@@ -8,6 +12,7 @@ select = [
   "F",
   "N",
   "UP",
+  "I",
   "ASYNC",
   "S",
   "FBT",
