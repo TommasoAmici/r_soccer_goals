@@ -261,7 +261,12 @@ async def fetch_submissions(subreddit: str):
 
     subreddit_instance = await reddit.subreddit(subreddit)
     async for submission in subreddit_instance.new(limit=LIMIT):
-        logger.debug("fetching submission id=%s url=%s title='%s'", submission.id, submission.url, submission.title)
+        logger.debug(
+            "fetching submission id=%s url=%s title='%s'",
+            submission.id,
+            submission.url,
+            submission.title,
+        )
         submission_data = Submission(
             submission.id,
             submission.url,
