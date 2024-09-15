@@ -18,5 +18,5 @@ runs:
     - run: ruff format --check .
       shell: sh
 
-    - run: ruff .
+    - run: ruff check .
       shell: sh

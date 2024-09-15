@@ -35,4 +35,4 @@ format: venv
 	${BIN}/ruff format .
 
 lint: venv
-	${BIN}/ruff .
+	${BIN}/ruff check .
