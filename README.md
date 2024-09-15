@@ -33,6 +33,8 @@ docker run --env-file .env r_soccer_goals:latest
 
 - `TELEGRAM_CHAT_ID`: chat to which the bot will send the video clips
 - `TELEGRAM_BOT_TOKEN`
+- `REDDIT_CLIENT_ID`: reddit app client id (see this small [how-to](https://rymur.github.io/setup))
+- `REDDIT_CLIENT_SECRET`:
 - `REDDIT_SUBREDDIT`: subreddit the bot will monitor for incoming posts
 - `TEAMS`: comma separated list of teams you want to receive goals for. e.g. "Juventus,Inter,Milan".
   Defaults to current Serie A teams.

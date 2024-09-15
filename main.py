@@ -7,14 +7,15 @@ from datetime import UTC, datetime
 from http import HTTPStatus
 
 import aiohttp
+import asyncpraw
 import uvloop
 from aiogram import Bot
 from aiogram.utils.exceptions import InvalidHTTPUrlContent, WrongFileIdentifier
 from redis import StrictRedis
 from yt_dlp import YoutubeDL
 
+
 from teams import blacklist_regex, teams_regex
-from user_agents import get_user_agent
 
 cache = StrictRedis(
     os.environ.get("REDIS_HOST", "localhost"),
@@ -30,7 +31,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG if os.getenv("DEBUG") else logging.INFO)
 
 LIMIT = 10
 CACHE_PREFIX = "r_soccer_goals"
@@ -250,48 +251,40 @@ async def worker(bot: Bot):
 
 async def fetch_submissions(subreddit: str):
     """
-    Fetches the latest posts from the given subreddit and processes each submission,
+    Fetches the latest posts from the given subreddit using asyncpraw and processes each submission,
     adding all videos that match the required filters to the download queue
     """
     logger.info("fetching submissions")
-    headers = {
-        "referer": "https://www.reddit.com/",
-        "accept": "application/json",
-        "user-agent": get_user_agent(),
-    }
-    async with aiohttp.ClientSession(headers=headers) as session:
-        url = f"https://old.reddit.com/r/{subreddit}/new.json?limit={LIMIT}"
+    reddit = asyncpraw.Reddit(
+        client_id=os.environ["REDDIT_CLIENT_ID"],
+        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
+        user_agent="r_soccer_goals_bot",
+    )
 
-        async with session.get(url) as response:
-            res_json = await response.json()
-            if res_json.get("data") is None:
-                logger.error("failed to load data from subreddit")
-                return
+    subreddit_instance = await reddit.subreddit(subreddit)
+    async for submission in subreddit_instance.new(limit=LIMIT):
+        logger.debug("fetching submission id=%s url=%s title='%s'", submission.id, submission.url, submission.title)
+        submission_data = Submission(
+            submission.id,
+            submission.url,
+            submission.title,
+            submission.link_flair_css_class,
+        )
 
-            for _child in res_json["data"].get("children", []):
-                child = _child["data"]
+        if submission_data.already_processed():
+            logger.debug(
+                "%s: skipping already processed submission",
+                submission_data.id,
+            )
+            continue
 
-                submission = Submission(
-                    child["id"],
-                    child["url"],
-                    child["title"],
-                    child["link_flair_css_class"],
-                )
+        logger.debug("%s: processing", submission_data.id)
 
-                if submission.already_processed():
-                    logger.debug(
-                        "%s: skipping already processed submission",
-                        submission.id,
-                    )
-                    continue
+        if submission_data.is_video() and teams_regex.search(submission_data.title):
+            logger.info("%s: adding to queue", submission_data.id)
+            submission_data.add_to_queue()
 
-                logger.debug("%s: processing", submission.id)
-
-                if submission.is_video() and submission.matches_wanted_teams():
-                    logger.debug("%s: adding to queue", submission.id)
-                    submission.add_to_queue()
-
-                submission.add_to_processed()
+        submission_data.add_to_processed()
 
 
 async def main():
