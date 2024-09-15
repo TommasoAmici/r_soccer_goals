@@ -11,7 +11,7 @@ COPY --from=build-python /root/.local /usr/local
 # Make sure scripts in /usr/local/bin are usable:
 ENV PATH=/usr/local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
-RUN mkdir -p /data
+RUN mkdir -p /data && chown nobody:nobody /data
 # TODO make src/ directory
 WORKDIR /app
 COPY main.py teams.py .
