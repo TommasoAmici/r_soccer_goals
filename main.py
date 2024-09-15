@@ -102,9 +102,7 @@ class Submission:
             "sporttube",
             "dubz.co",
         )
-        if any(s in self.url for s in streams):
-            return True
-        return False
+        return bool(any(s in self.url for s in streams))
 
     def matches_wanted_teams(self) -> bool:
         """Returns True if the submission's title matches the teams list"""
