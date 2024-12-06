@@ -1,6 +1,6 @@
 --extra-index-url https://alpine-wheels.github.io/index
 aiogram==2.25.2
 aiohttp[speedups]==3.8.6
-yt-dlp==2024.12.3
+yt-dlp==2024.12.6
 uvloop==0.21.0
 asyncpraw==7.8.0
