@@ -138,6 +138,7 @@ class Submission:
             "twitter",
             "sporttube",
             "dubz.co",
+            "caulse.com",
         )
         return bool(any(s in self.url for s in streams))
 
