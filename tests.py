@@ -60,6 +60,15 @@ def test_is_video(submission: Submission, expected):
             ),
             False,
         ),
+        (
+            Submission(
+                "yi4g0d",
+                "gazzetta.it",
+                "Inter Miami [7]-2 Seattle Sounders",
+                "",
+            ),
+            False,
+        ),
     ],
 )
 def test_matches_wanted_teams(submission: Submission, expected):

@@ -144,9 +144,16 @@ class Submission:
 
     def matches_wanted_teams(self) -> bool:
         """Returns True if the submission's title matches the teams list"""
-        is_wanted_team = teams_regex.search(self.title) is not None
         is_blacklisted = blacklist_regex.search(self.title)
-        return is_wanted_team and not is_blacklisted
+        if is_blacklisted:
+            return False
+        # I'm not sure why it's not being picked up by the blacklist regex, but it's
+        # gotta go
+        is_inter_miami = "inter miami" in self.title.lower()
+        if is_inter_miami:
+            return False
+        is_wanted_team = teams_regex.search(self.title) is not None
+        return is_wanted_team
 
 
 class Schedule:
