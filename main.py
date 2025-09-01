@@ -328,7 +328,7 @@ async def fetch_submissions(subreddit: str):
 
         logger.debug("%s: processing", submission_data.id)
 
-        if submission_data.is_video() and teams_regex.search(submission_data.title):
+        if submission_data.is_video() and submission_data.matches_wanted_teams():
             logger.info("%s: adding to queue", submission_data.id)
             submission_data.add_to_queue()
         else:
