@@ -53,7 +53,7 @@ jobs:
 
       - name: Create changelog
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v4
+        uses: TriPSs/conventional-changelog-action@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-version-file: "true"
